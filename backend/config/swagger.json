@@ -1,0 +1,215 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Edge Route Vision (ERV) API Documentation",
+    "description": "Enterprise REST API for Edge Route Vision corporate website and Admin Management System.",
+    "version": "1.0.0",
+    "contact": {
+      "email": "info@edgeroutevision.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Version 1 API Base"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Get system health status",
+        "description": "Returns uptime, database connection status, and version info.",
+        "responses": {
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "OK" },
+                    "database": { "type": "string", "example": "Connected" },
+                    "version": { "type": "string", "example": "1.0.0" },
+                    "uptime": { "type": "integer", "example": 3600 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Administrator Login",
+        "description": "Authenticates admin credentials, sets a Secure HttpOnly Refresh Token cookie, and returns a short-lived Access Token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "admin@ervision.com" },
+                  "password": { "type": "string", "format": "password", "example": "AdminPassword123!" },
+                  "rememberMe": { "type": "boolean", "example": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "headers": {
+              "Set-Cookie": {
+                "schema": { "type": "string", "example": "erv_refresh_token=...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StandardResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Rotate Access & Refresh Tokens",
+        "description": "Reads the Refresh Token from cookies, invalidates it, issues a new Access Token, and updates the Refresh Token cookie.",
+        "responses": {
+          "200": {
+            "description": "Token rotated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StandardResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired or invalid refresh token"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Administrator Logout",
+        "description": "Revokes the active Refresh Token in the database and clears the HttpOnly cookie.",
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "Get all products",
+        "description": "Retrieve all products with media URLs (public endpoint).",
+        "responses": {
+          "200": {
+            "description": "Successful retrieval"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a product (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created"
+          }
+        }
+      }
+    },
+    "/products/{slug}": {
+      "get": {
+        "summary": "Get product by slug",
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Product details with gallery images" },
+          "404": { "description": "Product not found" }
+        }
+      }
+    },
+    "/media/upload": {
+      "post": {
+        "summary": "Upload a file (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "description": "Uploads an image, video, or PDF brochure to Cloudinary.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "File uploaded successfully" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "StandardResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Operation completed successfully." },
+          "data": { "type": "object", "nullable": true },
+          "errors": { "type": "object", "nullable": true },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "requestId": { "type": "string", "format": "uuid" }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": ["name", "slug", "short_description", "full_description"],
+        "properties": {
+          "name": { "type": "string", "example": "Network Stream Video (NSV)" },
+          "slug": { "type": "string", "example": "nsv" },
+          "short_description": { "type": "string" },
+          "full_description": { "type": "string" },
+          "specifications": { "type": "object" },
+          "applications": { "type": "array", "items": { "type": "string" } },
+          "benefits": { "type": "array", "items": { "type": "string" } },
+          "features": { "type": "array", "items": { "type": "string" } },
+          "thumbnail_media_id": { "type": "string", "format": "uuid" },
+          "hero_media_id": { "type": "string", "format": "uuid" },
+          "brochure_media_id": { "type": "string", "format": "uuid" },
+          "galleryImageIds": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+        }
+      }
+    }
+  }
+}
