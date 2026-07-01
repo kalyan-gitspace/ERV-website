@@ -1,19 +1,73 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, Search, X } from 'lucide-react';
 import Logo from './Logo';
 
 const navItems = ['Home', 'About Us', 'Products', 'Gallery', 'Careers', 'Contact'];
 
+const productDropdownItems = [
+  'Network Survey Vehicle (NSV)',
+  'Mobile Bridge Inspecting Unit (MBIU)',
+  'Falling Weight Deflectometer (FWD)',
+];
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('Home');
+  const [productsOpen, setProductsOpen] = useState(false);
+
+  const handleProductsHover = (value) => setProductsOpen(value);
 
   useEffect(() => {
     const closeOnResize = () => {
       if (window.innerWidth >= 768) setOpen(false);
     };
 
+    const normalized = (value) => value.toLowerCase().replace(/\s/g, '');
+    const updateActiveFromHash = () => {
+      const hash = window.location.hash.slice(1).toLowerCase();
+      const section = navItems.find((item) => normalized(item) === hash);
+      if (section) {
+        setActiveSection(section);
+      } else if (!hash) {
+        setActiveSection('Home');
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSections = entries.filter((entry) => entry.isIntersecting);
+        if (visibleSections.length > 0) {
+          const bestSection = visibleSections.reduce((best, entry) =>
+            entry.intersectionRatio > best.intersectionRatio ? entry : best
+          );
+          const sectionId = bestSection.target.id;
+          const section = navItems.find((item) => normalized(item) === sectionId);
+          if (section) setActiveSection(section);
+        }
+      },
+      {
+        root: null,
+        rootMargin: '-45% 0px -45% 0px',
+        threshold: [0.25, 0.5, 0.75],
+      }
+    );
+
+    const sectionIds = navItems.map((item) => normalized(item));
+    sectionIds.forEach((id) => {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
+
     window.addEventListener('resize', closeOnResize);
-    return () => window.removeEventListener('resize', closeOnResize);
+    window.addEventListener('hashchange', updateActiveFromHash);
+    updateActiveFromHash();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', closeOnResize);
+      window.removeEventListener('hashchange', updateActiveFromHash);
+    };
   }, []);
 
   return (
@@ -25,19 +79,67 @@ export function Navbar() {
 
         <div className="hidden items-center gap-[34px] md:flex">
           {navItems.map((item) => {
-            const active = item === 'Home';
+            const active = activeSection === item;
+            if (item === 'Products') {
+              return (
+                <div
+                  key={item}
+                  className="relative"
+                  onMouseEnter={() => handleProductsHover(true)}
+                  onMouseLeave={() => handleProductsHover(false)}
+                >
+                  <a
+                    href={`#${item.toLowerCase().replace(/\s/g, '')}`}
+                    className={`group relative py-2 text-[17px] font-semibold tracking-normal transition-colors duration-300 ${
+                      active ? 'text-[#38BDF8]' : 'text-white hover:text-[#60A5FA]'
+                    }`}
+                  >
+                    {item}
+                    <span
+                      className="absolute -bottom-4 left-0 h-[2px] w-0 bg-[#38BDF8] origin-left transition-all duration-300 group-hover:w-full"
+                    />
+                  </a>
+
+                  <AnimatePresence>
+                    {productsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="absolute left-0 top-full z-50 mt-3 w-[300px] rounded-2xl border border-white/10 bg-[#111111]/[0.98] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.32)]"
+                      >
+                        <div className="absolute left-6 top-[-8px] h-3 w-3 rotate-45 rounded-sm bg-[#111111]/[0.98] border-l border-t border-white/10" />
+                        <div className="flex flex-col gap-2">
+                          {productDropdownItems.map((product) => (
+                            <a
+                              key={product}
+                              href={`#${product.toLowerCase().replace(/\s/g, '')}`}
+                              className="block rounded-2xl px-3 py-3 text-white transition-all duration-300 hover:text-[#38BDF8] hover:translate-x-1"
+                            >
+                              {product}
+                            </a>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
             return (
               <a
                 key={item}
                 href={item === 'Search' ? '/search' : `#${item.toLowerCase().replace(/\s/g, '')}`}
-                className={`relative py-2 text-[17px] font-semibold tracking-normal transition-colors duration-300 ${
+                className={`group relative py-2 text-[17px] font-semibold tracking-normal transition-colors duration-300 ${
                   active ? 'text-[#38BDF8]' : 'text-white hover:text-[#60A5FA]'
                 }`}
               >
                 {item}
-                {active ? (
-                  <span className="absolute -bottom-4 left-0 h-px w-full bg-[#38BDF8]" />
-                ) : null}
+                <span
+                  className="absolute -bottom-4 left-0 h-[2px] w-0 bg-[#38BDF8] origin-left transition-all duration-300 group-hover:w-full"
+                />
               </a>
             );
           })}

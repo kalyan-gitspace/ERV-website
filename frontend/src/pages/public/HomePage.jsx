@@ -4,14 +4,15 @@ import Logo from '../../components/Logo';
 import Navbar from '../../components/Navbar';
 import SEO from '../../components/SEO';
 import heroImage from '../../assets/hero.png';
+import WhyERVSection from './WhyERVSection';
 
 const heroLines = ['Intelligent Solutions', 'for a Connected Future'];
 
 const stats = [
-  { value: '2018', label: 'Established', icon: CalendarDays },
-  { value: '100+', label: 'Projects', icon: MapPin },
-  { value: '4+', label: 'Countries', icon: Globe2 },
-  { value: '50+', label: 'Clients', icon: Users },
+  { value: '2025', label: 'Established', icon: CalendarDays },
+  { value: '50+', label: 'Projects', icon: MapPin },
+  { value: '10+', label: 'Countries', icon: Globe2 },
+  { value: '1000+', label: 'Clients', icon: Users },
   { value: '99.9%', label: 'Accuracy', icon: Target },
 ];
 
@@ -29,11 +30,11 @@ function HeroHeading() {
 
 function StatsCard() {
   return (
-    <div className="mt-12 grid w-full grid-cols-2 gap-3 rounded-[24px] border border-white/8 bg-[rgba(10,10,10,0.95)] p-[34px] backdrop-blur-[10px] text-white sm:grid-cols-5 sm:gap-4">
+    <div className="mt-12 grid w-[1120px] grid-cols-2 gap-3 rounded-[24px] border border-white/8 bg-[rgba(10,10,10,0.95)] pt-[34px] pb-[34px] pl-[34px] pr-[18px] backdrop-blur-[10px] text-white sm:grid-cols-5 sm:gap-2">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.value} className="flex flex-col items-center justify-center gap-3 text-center">
+          <div key={stat.value} className="flex w-[190px] h-[140px] flex-col items-center justify-center gap-3 rounded-[20px] border border-white/8 bg-white/[0.02] text-center">
             <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#38BDF8]">
               <Icon className="h-5 w-5" strokeWidth={1.8} />
             </div>
@@ -65,10 +66,10 @@ export function HomePage() {
       />
       <Navbar />
 
-      <section className="relative min-h-screen bg-[#01030A]">
+      <section className="relative bg-[#01030A]">
         <div className="absolute right-0 top-0 bottom-0 bg-[#01030A]" />
 
-        <div className="relative z-10 mx-auto flex min-h-screen max-w-[1720px] flex-col px-6 pt-[104px] sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-12 lg:pt-[72px]">
+        <div className="relative z-10 mx-auto flex max-w-[1720px] flex-col px-6 pt-[104px] sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-12 lg:pt-[72px] pb-0">
           <div className="flex w-full flex-col justify-center lg:w-[37%] -mt-70">
             <div className="flex items-center gap-4">
              <div className="h-[2px] w-[44px] rounded-full bg-[#2EA7FF]" />
@@ -89,20 +90,20 @@ export function HomePage() {
                 <ArrowRight className="h-5 w-5 text-[#2EA7FF]" strokeWidth={2} />
               </a>
             </div>
-            <div className="mt-[30px] sm:mt-[34px]">
+            <div className="relative z-20 mt-[30px] sm:mt-[34px]">
               <StatsCard />
             </div>
           </div>
 
-          <div className="relative mt-0 h-[1100px] w-full lg:w-[100%] overflow-hidden">
+          <div className="relative mt-0 h-[1100px] w-full lg:w-[100%] overflow-visible">
             <img
               src={heroImage}
               alt="NSV vehicle"
               className="absolute inset-0 w-full h-[75%] object-contain"
-              style={{ top: "-15%",left: "0", objectPosition: "72% center" }}
+              style={{ top: "-15%",left: "0%", objectPosition: "72% center" }}
             />
             <div
-              className="absolute inset-y-0 left-0 w-full"
+              className="absolute top-0 left-0 h-[75%] w-full"
               style={{
                 background: 'linear-gradient(90deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,.88) 14%, rgba(0,0,0,.72) 24%, rgba(0,0,0,.42) 38%, rgba(0,0,0,.12) 52%, rgba(0,0,0,.00) 65%)'
               }}
@@ -110,6 +111,7 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      <WhyERVSection />
     </main>
   );
 }
