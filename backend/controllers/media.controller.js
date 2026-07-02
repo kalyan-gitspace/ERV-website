@@ -1,18 +1,20 @@
 import { mediaService } from '../services/media.service.js';
 import { dashboardService } from '../services/dashboard.service.js';
+import { serializeMediaUpload } from '../utils/uploads.js';
 
 export const mediaController = {
   /**
-   * Upload a single file (image, video, or PDF) to Cloudinary
+   * Upload a single file to the local uploads directory.
    */
   async upload(req, res, next) {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: 'No file provided. Please upload a file.' });
+        return res.status(400).json({ success: false, message: 'No file provided. Please upload a file.' });
       }
 
-      const adminId = req.admin.sub;
-      const media = await mediaService.uploadFile(req.file, adminId);
+      const adminId = req.admin?.sub || 'system';
+      const media = await mediaService.uploadFile(req.file, 'projects', adminId);
+      const serializedMedia = serializeMediaUpload(req, media);
 
       // Log admin action
       await dashboardService.logAdminActivity(
@@ -23,11 +25,22 @@ export const mediaController = {
       );
 
       return res.status(201).json({
+        success: true,
         message: 'File uploaded successfully.',
-        media
+        data: serializedMedia,
+        errors: null,
+        timestamp: new Date().toISOString(),
+        requestId: req.requestId
       });
     } catch (error) {
-      next(error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to upload images.',
+        data: null,
+        errors: null,
+        timestamp: new Date().toISOString(),
+        requestId: req.requestId
+      });
     }
   },
 
@@ -43,7 +56,10 @@ export const mediaController = {
         page,
         limit
       });
-      return res.status(200).json(result);
+      return res.status(200).json({
+        ...result,
+        items: result.items.map((item) => serializeMediaUpload(req, item)),
+      });
     } catch (error) {
       next(error);
     }
@@ -63,7 +79,7 @@ export const mediaController = {
 
       // Log admin action
       await dashboardService.logAdminActivity(
-        req.admin.sub,
+        req.admin?.sub || 'system',
         'DELETE_MEDIA',
         { mediaId: id, filename: deleted.filename },
         req.ip

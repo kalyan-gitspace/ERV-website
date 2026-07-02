@@ -28,6 +28,254 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
 }
 
+.rich-text-editor__content:empty::before {
+  content: attr(data-placeholder);
+  color: #64748b;
+  pointer-events: none;
+}
+
+.rich-text-editor__content p,
+.rich-text-editor__content ul,
+.rich-text-editor__content ol,
+.rich-text-editor__content blockquote,
+.rich-text-editor__content h1,
+.rich-text-editor__content h2,
+.rich-text-editor__content h3 {
+  margin: 0 0 1rem;
+}
+
+.rich-text-editor__content h1,
+.rich-text-editor__content h2,
+.rich-text-editor__content h3 {
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.18;
+}
+
+.rich-text-editor__content h1 {
+  font-size: 2rem;
+}
+
+.rich-text-editor__content h2 {
+  font-size: 1.6rem;
+}
+
+.rich-text-editor__content h3 {
+  font-size: 1.25rem;
+}
+
+.rich-text-editor__content ul,
+.rich-text-editor__content ol {
+  padding-left: 1.5rem;
+}
+
+.rich-text-editor__content ul {
+  list-style: disc;
+}
+
+.rich-text-editor__content ol {
+  list-style: decimal;
+}
+
+.rich-text-editor__content blockquote {
+  padding-left: 1rem;
+  color: #e2e8f0;
+  font-style: italic;
+}
+
+.rich-text-editor__content a {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+.rich-text-editor__content hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid #334155;
+}
+
+.rich-text-editor__content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.project-case-study-article {
+  width: 100%;
+  color: #d6dee8;
+  font-size: 18px;
+  line-height: 1.85;
+}
+
+.project-case-study-article > * + * {
+  margin-top: 1.25rem;
+}
+
+.project-case-study-article h1,
+.project-case-study-article h2,
+.project-case-study-article h3 {
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.18;
+}
+
+.project-case-study-article h1 {
+  font-size: 40px;
+  margin-top: 3rem;
+}
+
+.project-case-study-article h2 {
+  font-size: 32px;
+  margin-top: 3rem;
+}
+
+.project-case-study-article h3 {
+  font-size: 24px;
+  margin-top: 2.25rem;
+}
+
+.project-case-study-article p {
+  margin: 0;
+}
+
+.project-case-study-article ul,
+.project-case-study-article ol {
+  padding-left: 1.5rem;
+}
+
+.project-case-study-article ul {
+  list-style: disc;
+}
+
+.project-case-study-article ol {
+  list-style: decimal;
+}
+
+.project-case-study-article li + li {
+  margin-top: 0.45rem;
+}
+
+.project-case-study-article blockquote {
+  margin: 2rem 0;
+  padding-left: 1.25rem;
+  color: #ffffff;
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.project-case-study-article a {
+  color: #38bdf8;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.project-case-study-article hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.project-case-study-article img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 18px;
+}
+
+.project-case-study-section {
+  display: flow-root;
+  clear: both;
+  margin-top: 3.25rem;
+}
+
+.project-case-study-section + .project-case-study-section {
+  margin-top: 3.75rem;
+}
+
+.project-case-study-section .project-case-study-article > :first-child {
+  margin-top: 0;
+}
+
+.project-case-study-figure {
+  margin: 1rem auto 1.5rem;
+}
+
+.project-case-study-figure img {
+  display: block;
+  width: auto;
+  max-width: min(100%, 420px);
+  max-height: 360px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.project-case-study-tail {
+  clear: both;
+  margin-top: 3rem;
+}
+
+@media (min-width: 1024px) {
+  .project-case-study-figure--right {
+    float: right;
+    margin: 0.45rem 0 1.6rem 2.75rem;
+  }
+
+  .project-case-study-figure--left {
+    float: left;
+    margin: 0.45rem 2.75rem 1.6rem 0;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1023px) {
+  .project-case-study-section {
+    margin-top: 3rem;
+  }
+
+  .project-case-study-figure {
+    margin: 1.5rem auto 2rem;
+  }
+
+  .project-case-study-figure img {
+    max-width: min(100%, 340px);
+    max-height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .project-case-study-article {
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .project-case-study-article h1 {
+    font-size: 32px;
+  }
+
+  .project-case-study-article h2 {
+    font-size: 26px;
+  }
+
+  .project-case-study-article h3 {
+    font-size: 22px;
+  }
+
+  .project-case-study-section {
+    margin-top: 2.75rem;
+  }
+
+  .project-case-study-figure {
+    margin: 1.25rem auto 1.75rem;
+  }
+
+  .project-case-study-figure img {
+    width: 100%;
+    max-width: 340px;
+    max-height: 320px;
+    margin: 0 auto;
+  }
+}
+
 /* Custom scrollbar matching dark tech aesthetics */
 ::-webkit-scrollbar {
   width: 8px;

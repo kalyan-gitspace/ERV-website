@@ -8,7 +8,8 @@ const navItems = ['Home', 'About Us', 'Products', 'Gallery', 'Careers', 'Contact
 const productDropdownItems = [
   'Network Survey Vehicle (NSV)',
   'Mobile Bridge Inspecting Unit (MBIU)',
-  'Falling Weight Deflectometer (FWD)',
+  'Laser Dynamic Deflectometer (LDD)',
+  'Patch Hole Filling Machine (PFM)',
 ];
 
 export function Navbar() {

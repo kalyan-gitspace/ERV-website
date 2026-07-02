@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar';
 import SEO from '../../components/SEO';
 import heroImage from '../../assets/hero.png';
 import WhyERVSection from './WhyERVSection';
+import PreviousProjectsSection from './PreviousProjectsSection';
 
 const heroLines = ['Intelligent Solutions', 'for a Connected Future'];
 
@@ -112,6 +113,7 @@ export function HomePage() {
         </div>
       </section>
       <WhyERVSection />
+      <PreviousProjectsSection />
     </main>
   );
 }

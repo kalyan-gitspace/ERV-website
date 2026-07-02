@@ -22,6 +22,23 @@ export function protect(req, res, next) {
   next();
 }
 
+export function protectOptional(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  const decoded = authService.verifyAccessToken(token);
+
+  if (decoded) {
+    req.admin = decoded;
+  }
+
+  next();
+}
+
 /**
  * Middleware to restrict access to specific administrator roles
  * @param {...string} roles - Allowed roles (e.g. 'superadmin', 'editor')

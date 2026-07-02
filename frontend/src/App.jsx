@@ -12,6 +12,7 @@ const Search      = lazy(() => import('./pages/public/Search'));
 const Privacy     = lazy(() => import('./pages/public/Privacy'));
 const Terms       = lazy(() => import('./pages/public/Terms'));
 const Sitemap     = lazy(() => import('./pages/public/Sitemap'));
+const ProjectDetail = lazy(() => import('./pages/public/ProjectDetail'));
 
 // ─── Admin Pages ──────────────────────────────────────────────────────────────
 const Login     = lazy(() => import('./pages/admin/Login'));
@@ -29,6 +30,7 @@ function App() {
             {/* ── PUBLIC WEBSITE (primary experience) ── */}
             <Route path="/"               element={<HomePage />} />
             <Route path="/products/:slug" element={<ProductDetail />} />
+            <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/search"         element={<Search />} />
             <Route path="/privacy"        element={<Privacy />} />
             <Route path="/terms"          element={<Terms />} />

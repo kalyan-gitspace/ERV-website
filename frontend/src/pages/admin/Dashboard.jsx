@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { motion } from 'framer-motion';
-import { LogOut, Lock, User, Shield, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { LogOut, Lock, User, Shield, AlertCircle, CheckCircle, RefreshCw, FolderKanban } from 'lucide-react';
+import PreviousProjectsAdmin from './PreviousProjectsAdmin';
 
 export function Dashboard() {
   const { user, logout, changePassword } = useAuth();
-  
-  // Password change state
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState({ success: '', error: '', loading: false });
@@ -46,141 +45,152 @@ export function Dashboard() {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 font-sans p-6 overflow-hidden">
-      {/* Glow shapes */}
-      <div className="absolute top-10 left-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 p-6 font-sans text-slate-100">
+      <div className="absolute left-10 top-10 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" />
+      <div className="absolute bottom-10 right-10 h-96 w-96 rounded-full bg-cyan-600/10 blur-3xl" />
 
-      <div className="relative max-w-5xl mx-auto space-y-6">
-        {/* Navigation / Header */}
-        <header className="flex justify-between items-center bg-slate-900/40 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl shadow-xl">
+      <div className="relative mx-auto max-w-6xl space-y-6">
+        <header className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600">
+              <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-100">Edge Route Vision</h1>
-              <p className="text-xs text-slate-400 font-light">Secure Admin Panel</p>
+              <p className="text-xs font-light text-slate-400">Secure Admin Panel</p>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] transition-all rounded-xl text-sm font-semibold text-white shadow-md cursor-pointer"
+            className="flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 active:scale-[0.98]"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
             Sign Out
           </button>
         </header>
 
-        {/* User Card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <section className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl shadow-xl md:col-span-1 flex flex-col justify-between">
+        <div className="grid gap-6 md:grid-cols-3">
+          <section className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl md:col-span-1">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
-                  <User className="w-6 h-6 text-slate-300" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-700 bg-slate-800">
+                  <User className="h-6 w-6 text-slate-300" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-100">{user?.fullName}</h3>
-                  <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="mt-0.5 inline-block rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                     {user?.roleName}
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-2.5 pt-4 border-t border-slate-800 text-sm">
+              <div className="space-y-2.5 border-t border-slate-800 pt-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-light">Email Address:</span>
-                  <span className="text-slate-200 font-mono">{user?.email}</span>
+                  <span className="font-light text-slate-400">Email Address:</span>
+                  <span className="font-mono text-slate-200">{user?.email}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-light">Account status:</span>
-                  <span className="text-emerald-400 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="font-light text-slate-400">Account status:</span>
+                  <span className="flex items-center gap-1 font-medium text-emerald-400">
+                    <span className="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-400" />
                     Active
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 p-3.5 bg-slate-950/60 border border-slate-800 rounded-xl text-[11px] text-slate-500 leading-normal">
+            <div className="mt-8 rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-[11px] leading-normal text-slate-500">
               Session is actively monitored. Inactivity logs are transmitted back to system security.
             </div>
           </section>
 
-          {/* Change Password Card */}
-          <section className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl shadow-xl md:col-span-2 space-y-4">
-            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <Lock className="w-5 h-5 text-indigo-400" />
-              Change Credentials & Password
-            </h2>
-            <p className="text-xs text-slate-400 font-light">
-              Changing your password automatically revokes session logins on all other active devices.
-            </p>
+          <div className="grid gap-6 xl:col-span-2 xl:grid-cols-[1.4fr_0.6fr]">
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-100">
+                <Lock className="h-5 w-5 text-indigo-400" />
+                Change Credentials & Password
+              </h2>
+              <p className="mt-2 text-xs font-light text-slate-400">
+                Changing your password automatically revokes session logins on all other active devices.
+              </p>
 
-            <form onSubmit={handlePasswordChange} className="space-y-4 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors"
-                  />
+              <form onSubmit={handlePasswordChange} className="space-y-4 pt-2">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm placeholder-slate-700 transition-colors focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm placeholder-slate-700 transition-colors focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm placeholder-slate-700 focus:outline-none focus:border-indigo-500 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {passwordStatus.error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {passwordStatus.error}
-                </div>
-              )}
-
-              {passwordStatus.success && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-xl text-xs flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  {passwordStatus.success}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={passwordStatus.loading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-md transition-all active:scale-[0.98] cursor-pointer"
-              >
-                {passwordStatus.loading ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Updating credentials...
-                  </>
-                ) : (
-                  'Change Password'
+                {passwordStatus.error && (
+                  <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
+                    <AlertCircle className="h-4 w-4" />
+                    {passwordStatus.error}
+                  </div>
                 )}
-              </button>
-            </form>
-          </section>
+
+                {passwordStatus.success && (
+                  <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-300">
+                    <CheckCircle className="h-4 w-4" />
+                    {passwordStatus.success}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={passwordStatus.loading}
+                  className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-indigo-500 disabled:bg-indigo-800 active:scale-[0.98]"
+                >
+                  {passwordStatus.loading ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      Updating credentials...
+                    </>
+                  ) : (
+                    'Change Password'
+                  )}
+                </button>
+              </form>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-100">
+                <FolderKanban className="h-5 w-5 text-cyan-400" />
+                Modules
+              </h2>
+              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
+                Previous Projects module is now available below the homepage content and inside the admin panel.
+              </div>
+            </section>
+          </div>
         </div>
+
+        <PreviousProjectsAdmin />
       </div>
     </div>
   );
 }
+
 export default Dashboard;

@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from './config/logger.js';
 import db from './config/db.js';
 import apiRouter from './routes/index.js';
@@ -14,12 +16,15 @@ import { responseMiddleware } from './middlewares/response.middleware.js';
 import { setCsrfToken, csrfProtection } from './middlewares/csrf.middleware.js';
 import { healthController } from './controllers/health.controller.js';
 import { swaggerController } from './controllers/swagger.controller.js';
+import { mediaService } from './services/media.service.js';
 
 // Trivial change to force reload
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 1. Request ID — must be first so all subsequent logs include the ID
 app.use(requestIdMiddleware);
@@ -39,6 +44,11 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  },
+}));
 
 // 5. Standardized Response Helpers (res.ok, res.created, res.error)
 app.use(responseMiddleware);
@@ -126,6 +136,7 @@ async function bootstrapAdmin() {
 
 // Start the server
 app.listen(PORT, async () => {
+  mediaService.initStorage();
   logger.info(`Edge Route Vision backend running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
   await bootstrapAdmin();
 });

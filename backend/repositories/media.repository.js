@@ -93,7 +93,8 @@ export const mediaRepository = {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
-    const params = [filename, url, public_id, file_type, file_size, uploaded_by];
+    const parsedUploader = uploaded_by && uploaded_by !== 'system' ? uploaded_by : null;
+    const params = [filename, url, public_id, file_type, file_size, parsedUploader];
     const result = await db.query(query, params);
     return result.rows[0];
   },

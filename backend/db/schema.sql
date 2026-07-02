@@ -221,6 +221,33 @@ CREATE TRIGGER update_careers_updated_at
 BEFORE UPDATE ON careers
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Projects Table
+CREATE TABLE projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    short_description TEXT NOT NULL,
+    rich_description TEXT DEFAULT '',
+    main_image VARCHAR(2048),
+    gallery_images JSONB DEFAULT '[]'::jsonb,
+    location VARCHAR(255),
+    completion_date VARCHAR(100),
+    category VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'enabled',
+    display_order INTEGER DEFAULT 0,
+    seo_title VARCHAR(255),
+    seo_description TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Trigger for projects
+CREATE TRIGGER update_projects_cms_updated_at
+BEFORE UPDATE ON projects
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 -- Company Information Table (About Us sections storage)
 CREATE TABLE company_information (

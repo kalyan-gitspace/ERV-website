@@ -44,7 +44,8 @@ export const dashboardRepository = {
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
-    const result = await db.query(query, [adminId, action, JSON.stringify(details), ipAddress]);
+    const parsedAdminId = adminId && adminId !== 'system' ? adminId : null;
+    const result = await db.query(query, [parsedAdminId, action, JSON.stringify(details), ipAddress]);
     return result.rows[0];
   },
 
