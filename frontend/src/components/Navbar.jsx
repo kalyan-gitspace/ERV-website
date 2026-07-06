@@ -9,7 +9,7 @@ const productDropdownItems = [
   'Network Survey Vehicle (NSV)',
   'Mobile Bridge Inspecting Unit (MBIU)',
   'Laser Dynamic Deflectometer (LDD)',
-  'Patch Hole Filling Machine (PFM)',
+  'Pothole Filling Machine (PFM)',
 ];
 
 export function Navbar() {

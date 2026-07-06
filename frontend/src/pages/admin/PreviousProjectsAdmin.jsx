@@ -11,10 +11,63 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
+const getUniqueProjectSlug = (projectTitle, projects = [], editingId = null, preferredSlug = '') => {
+  const baseSlug = slugify(projectTitle) || `project-${Date.now().toString(36)}`;
+  const usedSlugs = new Set(
+    projects
+      .filter((project) => String(project.id) !== String(editingId))
+      .map((project) => project.slug)
+      .filter(Boolean)
+  );
+
+  if (preferredSlug && !usedSlugs.has(preferredSlug)) {
+    return preferredSlug;
+  }
+
+  if (!usedSlugs.has(baseSlug)) {
+    return baseSlug;
+  }
+
+  let suffix = 2;
+  while (usedSlugs.has(`${baseSlug}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseSlug}-${suffix}`;
+};
+
+const getSlugConflictFallback = (projectTitle) => {
+  const baseSlug = slugify(projectTitle) || 'project';
+  return `${baseSlug}-${Date.now().toString(36)}`;
+};
+
+const isSlugConflictError = (error) => {
+  const message = String(error?.message || error?.response?.data?.message || '').toLowerCase();
+  return message.includes('projects_slug_key') || (message.includes('duplicate key') && message.includes('slug'));
+};
+
 const emitProjectsChanged = () => {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('projects:updated'));
   }
+};
+
+const hasProjectDescriptionContent = (html = '') => {
+  if (htmlToPlainText(html)) {
+    return true;
+  }
+
+  if (!html) {
+    return false;
+  }
+
+  if (typeof document !== 'undefined') {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    return Boolean(wrapper.querySelector('img[src]'));
+  }
+
+  return /<img\b/i.test(String(html));
 };
 
 export function PreviousProjectsAdmin() {
@@ -27,7 +80,6 @@ export function PreviousProjectsAdmin() {
   const [enabled, setEnabled] = useState(true);
   const [warning, setWarning] = useState('');
   const [mainImageItem, setMainImageItem] = useState(null);
-  const [galleryItems, setGalleryItems] = useState([]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -36,7 +88,6 @@ export function PreviousProjectsAdmin() {
     setEnabled(true);
     setWarning('');
     setMainImageItem(null);
-    setGalleryItems([]);
   };
 
   const loadProjects = async () => {
@@ -82,30 +133,11 @@ export function PreviousProjectsAdmin() {
     setWarning('');
   };
 
-  const handleGalleryChange = (event) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-
-    const newItems = files.map((file) => ({
-      id: `${Date.now()}-${Math.random()}`,
-      type: 'new',
-      value: file,
-      preview: URL.createObjectURL(file),
-    }));
-
-    setGalleryItems((current) => [...current, ...newItems]);
-    setWarning('');
-  };
-
-  const removeGalleryItem = (itemId) => {
-    setGalleryItems((current) => current.filter((item) => item.id !== itemId));
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const plainDescription = htmlToPlainText(description);
-    const hasRequiredFields = Boolean(title.trim() && plainDescription && mainImageItem && galleryItems.length > 0);
+    const hasRequiredFields = Boolean(title.trim() && hasProjectDescriptionContent(description) && mainImageItem);
     if (!hasRequiredFields) {
       setWarning('Please complete all required fields before publishing this project.');
       return;
@@ -120,36 +152,55 @@ export function PreviousProjectsAdmin() {
         mainImageUrl = (await uploadImage(mainImageItem.value)) || '';
       }
 
-      const galleryUrls = [];
-      for (const item of galleryItems) {
-        if (item.type === 'existing') {
-          galleryUrls.push(item.value);
-        } else if (item.type === 'new') {
-          const uploadedUrl = await uploadImage(item.value);
-          if (uploadedUrl) {
-            galleryUrls.push(uploadedUrl);
-          }
-        }
+      if (!mainImageUrl) {
+        setWarning('Main Image upload failed. Please choose the image again and publish.');
+        return;
       }
 
       const payload = {
         title: title.trim(),
-        slug: slugify(title.trim()),
-        short_description: plainDescription,
+        slug: getUniqueProjectSlug(
+          title.trim(),
+          projects,
+          editingId,
+          editingId && slugify(projects.find((project) => String(project.id) === String(editingId))?.title || '') === slugify(title.trim())
+            ? projects.find((project) => String(project.id) === String(editingId))?.slug
+            : ''
+        ),
+        short_description: plainDescription || title.trim(),
         rich_description: description.trim(),
         main_image: mainImageUrl,
-        gallery_images: galleryUrls,
+        gallery_images: [],
         status: enabled ? 'enabled' : 'disabled',
       };
 
       console.log('[projects] publishing payload', payload);
 
-      if (editingId) {
-        const res = await api.put(`/projects/${editingId}`, payload);
-        console.log('[projects] update response', res);
-      } else {
-        const res = await api.post('/projects', payload);
+      const saveProject = async (projectPayload) => {
+        if (editingId) {
+          const res = await api.put(`/projects/${editingId}`, projectPayload);
+          console.log('[projects] update response', res);
+          return res;
+        }
+
+        const res = await api.post('/projects', projectPayload);
         console.log('[projects] create response', res);
+        return res;
+      };
+
+      try {
+        await saveProject(payload);
+      } catch (error) {
+        if (!isSlugConflictError(error)) {
+          throw error;
+        }
+
+        const retryPayload = {
+          ...payload,
+          slug: getSlugConflictFallback(title.trim()),
+        };
+        console.warn('[projects] slug conflict, retrying with slug', retryPayload.slug);
+        await saveProject(retryPayload);
       }
 
       resetForm();
@@ -157,6 +208,7 @@ export function PreviousProjectsAdmin() {
       emitProjectsChanged();
     } catch (error) {
       console.error(error);
+      setWarning(error.message || 'Project could not be published. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -173,25 +225,13 @@ export function PreviousProjectsAdmin() {
         ? { id: `existing-main-${project.id}`, type: 'existing', value: project.main_image, preview: resolveImageUrl(project.main_image) }
         : null
     );
-    setGalleryItems(
-      Array.isArray(project.gallery_images)
-        ? project.gallery_images.map((image, index) => ({
-            id: `existing-gallery-${project.id}-${index}`,
-            type: 'existing',
-            value: image,
-            preview: resolveImageUrl(image),
-          }))
-        : []
-    );
   };
 
   const toggleStatus = async (project) => {
     const hasRequiredFields = Boolean(
       project.title?.trim() &&
-        htmlToPlainText(project.rich_description || project.short_description || '') &&
-        project.main_image &&
-        Array.isArray(project.gallery_images) &&
-        project.gallery_images.length > 0
+        hasProjectDescriptionContent(project.rich_description || project.short_description || '') &&
+        project.main_image
     );
 
     if (!hasRequiredFields) {
@@ -225,7 +265,7 @@ export function PreviousProjectsAdmin() {
     }
   };
 
-  const isSubmitDisabled = saving || !(title.trim() && htmlToPlainText(description) && mainImageItem && galleryItems.length > 0);
+  const isSubmitDisabled = saving || !(title.trim() && hasProjectDescriptionContent(description) && mainImageItem);
 
   return (
     <div className="space-y-6 rounded-3xl border border-slate-800 bg-slate-900/50 p-6 text-slate-100 shadow-2xl">
@@ -237,6 +277,23 @@ export function PreviousProjectsAdmin() {
       <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 space-y-4">
         <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
           <PlusCircle className="h-4 w-4" /> {editingId ? 'Edit Project' : 'Add Project'}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm text-slate-300">Main Image</label>
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/70 px-3 py-3 text-sm text-slate-300">
+            <Upload className="h-4 w-4" />
+            Choose Image
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleMainImageChange} />
+          </label>
+          {mainImageItem && (
+            <div className="relative">
+              <img src={mainImageItem.preview} alt="Main preview" className="h-28 w-full rounded-xl object-cover" />
+              <button type="button" onClick={removeMainImage} className="absolute right-2 top-2 rounded-full bg-slate-950/80 p-1 text-slate-100">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -261,48 +318,9 @@ export function PreviousProjectsAdmin() {
               setDescription(value);
               setWarning('');
             }}
+            onUploadImage={uploadImage}
             placeholder="Write a simple description"
           />
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm text-slate-300">Main Image</label>
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/70 px-3 py-3 text-sm text-slate-300">
-              <Upload className="h-4 w-4" />
-              Choose Image
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleMainImageChange} />
-            </label>
-            {mainImageItem && (
-              <div className="relative">
-                <img src={mainImageItem.preview} alt="Main preview" className="h-28 w-full rounded-xl object-cover" />
-                <button type="button" onClick={removeMainImage} className="absolute right-2 top-2 rounded-full bg-slate-950/80 p-1 text-slate-100">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-slate-300">Additional Photos</label>
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/70 px-3 py-3 text-sm text-slate-300">
-              <Upload className="h-4 w-4" />
-              Choose Photos
-              <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleGalleryChange} />
-            </label>
-            {galleryItems.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {galleryItems.map((item) => (
-                  <div key={item.id} className="relative">
-                    <img src={item.preview} alt="Gallery preview" className="h-16 w-full rounded-lg object-cover" />
-                    <button type="button" onClick={() => removeGalleryItem(item.id)} className="absolute right-1 top-1 rounded-full bg-slate-950/80 p-1 text-slate-100">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {warning && <p className="text-sm text-amber-400">{warning}</p>}

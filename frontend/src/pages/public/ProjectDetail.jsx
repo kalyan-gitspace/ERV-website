@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import api, { resolveImageUrl } from '../../services/api';
 import { PublicLayout } from '../../layouts/PublicLayout';
-import { createEditorialArticleFlow, getEditableHtml, normalizeHtmlImageSources } from '../../utils/richText';
+import { getEditableHtml, normalizeHtmlImageSources, removeEditorOnlyArticleUi } from '../../utils/richText';
 
 export function ProjectDetail() {
   const { slug } = useParams();
@@ -52,13 +52,11 @@ export function ProjectDetail() {
     );
   }
 
-  const articleHtml = normalizeHtmlImageSources(
-    getEditableHtml(project.rich_description || project.short_description || ''),
-    resolveImageUrl
-  );
-  const articleFlow = createEditorialArticleFlow(
-    articleHtml,
-    Array.isArray(project.gallery_images) ? project.gallery_images.map((image) => resolveImageUrl(image)) : []
+  const articleHtml = removeEditorOnlyArticleUi(
+    normalizeHtmlImageSources(
+      getEditableHtml(project.rich_description || project.short_description || ''),
+      resolveImageUrl
+    )
   );
 
   return (
@@ -80,31 +78,10 @@ export function ProjectDetail() {
           <article className="mt-12">
             <h1 className="text-[40px] font-bold leading-[1.08] text-white lg:text-[48px]">{project.title}</h1>
 
-            {articleFlow.introHtml && (
+            {articleHtml && (
               <div
                 className="project-case-study-article mt-8"
-                dangerouslySetInnerHTML={{ __html: articleFlow.introHtml }}
-              />
-            )}
-
-            {articleFlow.sections.map((section, index) => (
-              <section key={`${section.image}-${index}`} className="project-case-study-section">
-                <figure className={`project-case-study-figure project-case-study-figure--${section.align}`}>
-                  <img src={section.image} alt={`${project.title} photo ${index + 1}`} />
-                </figure>
-                {section.html && (
-                  <div
-                    className="project-case-study-article"
-                    dangerouslySetInnerHTML={{ __html: section.html }}
-                  />
-                )}
-              </section>
-            ))}
-
-            {articleFlow.tailHtml && (
-              <div
-                className="project-case-study-article project-case-study-tail"
-                dangerouslySetInnerHTML={{ __html: articleFlow.tailHtml }}
+                dangerouslySetInnerHTML={{ __html: articleHtml }}
               />
             )}
           </article>

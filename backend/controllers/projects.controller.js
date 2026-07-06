@@ -54,6 +54,10 @@ export const projectsController = {
 
       return res.status(201).json({ success: true, message: 'Project created successfully.', data: serializeProjectUploads(req, project) });
     } catch (error) {
+      // Handle Postgres unique constraint violation for slug
+      if (error && (error.code === '23505' || error.constraint === 'projects_slug_key' || String(error.message || '').includes('projects_slug_key'))) {
+        return res.status(409).json({ success: false, message: 'projects_slug_key: Project slug already exists. Please choose a different title or slug.' });
+      }
       next(error);
     }
   },
@@ -77,6 +81,10 @@ export const projectsController = {
 
       return res.status(200).json({ success: true, message: 'Project updated successfully.', data: serializeProjectUploads(req, project) });
     } catch (error) {
+      // Handle Postgres unique constraint violation for slug on update
+      if (error && (error.code === '23505' || error.constraint === 'projects_slug_key' || String(error.message || '').includes('projects_slug_key'))) {
+        return res.status(409).json({ success: false, message: 'projects_slug_key: Project slug already exists. Please choose a different title or slug.' });
+      }
       next(error);
     }
   },

@@ -57,6 +57,79 @@ export const normalizeHtmlImageSources = (html = '', resolveImageUrl) => {
   return wrapper.innerHTML;
 };
 
+const editorOnlySelector = [
+  '[data-erv-editor-control="true"]',
+  '[data-erv-delete-content-box="true"]',
+  '[data-erv-change-image="true"]',
+].join(',');
+
+const contentBoxPublicElementSelector = [
+  '[data-erv-content-box="true"]',
+  '[data-erv-content-layout="true"]',
+  '[data-erv-content-media="true"]',
+  '[data-erv-content-image="true"]',
+  '[data-erv-content-text="true"]',
+].join(',');
+
+export const removeEditorOnlyArticleUi = (html = '') => {
+  if (!html || typeof document === 'undefined') {
+    return html;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+
+  // Remove editor-only controls
+  wrapper.querySelectorAll(editorOnlySelector).forEach((element) => element.remove());
+
+  // Clean content-box elements: remove editing attributes but keep data attributes for layout
+  wrapper.querySelectorAll(contentBoxPublicElementSelector).forEach((element) => {
+    element.removeAttribute('contenteditable');
+    element.removeAttribute('data-placeholder');
+    element.removeAttribute('style');
+  });
+
+  const unsafeTagNames = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META', 'BASE']);
+  const sanitizeStyleValue = (value = '') => value.replace(/expression\s*\(|url\s*\(|javascript\s*:/gi, '');
+
+  Array.from(wrapper.querySelectorAll('*')).forEach((node) => {
+    if (unsafeTagNames.has(node.tagName)) {
+      node.remove();
+      return;
+    }
+
+    node.removeAttribute('contenteditable');
+    node.removeAttribute('data-placeholder');
+
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name;
+      const lowerName = name.toLowerCase();
+      const value = attribute.value;
+
+      if (lowerName.startsWith('on')) {
+        node.removeAttribute(name);
+        return;
+      }
+
+      if ((lowerName === 'href' || lowerName === 'src' || lowerName === 'xlink:href') && /^\s*javascript:/i.test(value)) {
+        node.removeAttribute(name);
+        return;
+      }
+
+      if (lowerName === 'style') {
+        const sanitized = sanitizeStyleValue(value);
+        if (sanitized.trim()) {
+          node.setAttribute('style', sanitized);
+        } else {
+          node.removeAttribute('style');
+        }
+      }
+    });
+  });
+
+  return wrapper.innerHTML;
+};
+
 const isEmptyNode = (node) => {
   if (node.nodeType === Node.TEXT_NODE) {
     return !node.textContent.trim();

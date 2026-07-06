@@ -62,6 +62,18 @@ const apiLimiter = rateLimit({
   max: 150,
   standardHeaders: true,
   legacyHeaders: false,
+  // Do not apply rate limit to auth login endpoint so admins are not blocked
+  // (this prevents blocking legitimate repeated login attempts from the same IP)
+  skip: (req /*, res */) => {
+    try {
+      const url = String(req.originalUrl || req.url || '').toLowerCase();
+      // Skip limiter for auth login/refresh/logout endpoints under API v1 auth
+      if (url.startsWith('/api/v1/auth')) return true;
+    } catch (e) {
+      // ignore and do not skip
+    }
+    return false;
+  },
   message: { success: false, message: 'Too many requests from this IP, please try again later.' },
 });
 app.use('/api/', apiLimiter);
