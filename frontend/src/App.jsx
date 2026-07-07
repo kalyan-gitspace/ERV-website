@@ -7,8 +7,10 @@ import { LoadingScreen } from './components/LoadingScreen';
 
 // ─── Public Pages (lazy loaded for performance) ──────────────────────────────
 const HomePage    = lazy(() => import('./pages/public/HomePage'));
+const AboutPage   = lazy(() => import('./pages/public/AboutPage'));
 const ProductDetail = lazy(() => import('./pages/public/ProductDetail'));
 const Search      = lazy(() => import('./pages/public/Search'));
+const GalleryPage = lazy(() => import('./pages/public/GalleryPage'));
 const Privacy     = lazy(() => import('./pages/public/Privacy'));
 const Terms       = lazy(() => import('./pages/public/Terms'));
 const Sitemap     = lazy(() => import('./pages/public/Sitemap'));
@@ -29,9 +31,11 @@ function App() {
           <Routes>
             {/* ── PUBLIC WEBSITE (primary experience) ── */}
             <Route path="/"               element={<HomePage />} />
+            <Route path="/about"          element={<AboutPage />} />
             <Route path="/products/:slug" element={<ProductDetail />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/search"         element={<Search />} />
+            <Route path="/gallery"        element={<GalleryPage />} />
             <Route path="/privacy"        element={<Privacy />} />
             <Route path="/terms"          element={<Terms />} />
             <Route path="/sitemap"        element={<Sitemap />} />

@@ -58,7 +58,7 @@ export function HomePage() {
   }), []);
 
   return (
-    <main id="home" className="min-h-screen overflow-hidden bg-[#01030A] font-sans text-white">
+    <main id="home" className="min-h-screen overflow-hidden bg-black font-sans text-white">
       <SEO
         title="Engineering Smarter Roads"
         description="ERV delivers advanced road and infrastructure intelligence through cutting-edge engineering, precision surveying technology, and innovative data-driven solutions."
@@ -67,14 +67,14 @@ export function HomePage() {
       />
       <Navbar />
 
-      <section className="relative bg-[#01030A]">
-        <div className="absolute right-0 top-0 bottom-0 bg-[#01030A]" />
+      <section className="relative bg-black">
+        <div className="absolute right-0 top-0 bottom-0 bg-black" />
 
         <div className="relative z-10 mx-auto flex max-w-[1720px] flex-col px-6 pt-[104px] sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-12 lg:pt-[72px] pb-0">
           <div className="flex w-full flex-col justify-center lg:w-[37%] -mt-70">
             <div className="flex items-center gap-4">
              <div className="h-[2px] w-[44px] rounded-full bg-[#2EA7FF]" />
-             <p className="text-[16px] font-medium leading-[26px] tracking-[-0.01em] text-[#2EA7FF] m-0" style={{ fontFamily: 'Inter, sans-serif' }}>
+             <p className="erv-section-label m-0" style={{ fontFamily: 'Inter, sans-serif' }}>
                 Engineering Smarter Roads. Powering Intelligent Infrastructure.
              </p>
         </div>

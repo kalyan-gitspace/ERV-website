@@ -44,7 +44,7 @@ export default function PreviousProjectsSection() {
   }
 
   return (
-    <section className="relative w-full bg-[#01030A] py-24">
+    <section className="relative w-full bg-black py-24">
       <div className="mx-auto max-w-[1720px] px-6 sm:px-8 lg:px-12">
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[760px]">
@@ -93,7 +93,7 @@ export default function PreviousProjectsSection() {
                   <a
                     key={project.id}
                     href={`/projects/${project.slug}`}
-                    className="group overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(255,255,255,0.04)] shadow-[0_30px_80px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-[#2EA7FF]/50"
+                    className="group overflow-hidden rounded-[28px] border border-white/10 bg-[#050505] shadow-[0_30px_80px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-[#2EA7FF]/50"
                   >
                     <div className="relative h-56 overflow-hidden">
                       {mainImageUrl && (

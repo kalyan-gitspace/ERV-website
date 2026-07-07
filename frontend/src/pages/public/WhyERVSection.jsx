@@ -24,10 +24,10 @@ export default function WhyERVSection() {
   ];
 
   return (
-    <section className="relative -mt-[230px] w-full bg-[#01030A] pt-[-100px] pb-24">
+    <section className="relative -mt-[230px] w-full bg-black pt-[-100px] pb-24">
       <div className="mx-auto max-w-[1720px] px-6 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-[960px] text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2EA7FF]">Why ERV</p>
+          <p className="erv-section-label">Why ERV</p>
           <h2 className="mt-6 text-[44px] font-[550] leading-[1.05] text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Reveal Hidden Road Risks: ERV&apos;s Data-Powered Intelligence
           </h2>
@@ -40,7 +40,7 @@ export default function WhyERVSection() {
           {cards.map((card) => {
             const Icon = card.icon;
             return (
-              <div key={card.title} className="rounded-[24px] border border-white/10 bg-white/5 p-8 text-white shadow-[0_40px_120px_rgba(0,0,0,0.25)]">
+              <div key={card.title} className="rounded-[24px] border border-white/10 bg-[#050505] p-8 text-white shadow-[0_40px_120px_rgba(0,0,0,0.25)]">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#111827] text-[#2EA7FF]">
                   <Icon className="h-6 w-6" strokeWidth={1.8} />
                 </div>

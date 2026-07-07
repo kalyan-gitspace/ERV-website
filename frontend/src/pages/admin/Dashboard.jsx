@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { LogOut, Lock, User, Shield, AlertCircle, CheckCircle, RefreshCw, FolderKanban } from 'lucide-react';
 import PreviousProjectsAdmin from './PreviousProjectsAdmin';
+import GalleryAdmin from './GalleryAdmin';
 
 export function Dashboard() {
   const { user, logout, changePassword } = useAuth();
@@ -187,6 +188,7 @@ export function Dashboard() {
           </div>
         </div>
 
+        <GalleryAdmin />
         <PreviousProjectsAdmin />
       </div>
     </div>
