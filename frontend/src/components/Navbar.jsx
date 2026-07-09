@@ -9,7 +9,7 @@ const navItems = [
   { label: 'About Us', to: '/about' },
   { label: 'Products', to: '/products/ldd' },
   { label: 'Gallery', to: '/gallery' },
-  { label: 'Careers', to: '#careers' },
+  { label: 'Careers', to: '/careers' },
   { label: 'Contact', to: '#contact' },
 ];
 
@@ -56,6 +56,14 @@ export function Navbar() {
       window.removeEventListener('hashchange', updateActiveFromHash);
       window.addEventListener('resize', closeOnResize);
       return () => window.removeEventListener('resize', closeOnResize);
+    }
+
+    if (location.pathname === '/careers') {
+    setActiveSection('Careers');
+    window.removeEventListener('hashchange', updateActiveFromHash);
+    window.addEventListener('resize', closeOnResize);
+
+    return () => window.removeEventListener('resize', closeOnResize);
     }
 
     if (location.pathname.startsWith('/products')) {

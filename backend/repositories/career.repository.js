@@ -138,6 +138,49 @@ export const careerRepository = {
   },
 
   /**
+   * Store a job application submission
+   */
+  async createApplication(applicationData) {
+    const {
+      jobId,
+      fullName,
+      email,
+      phone,
+      noticePeriod,
+      totalExperience,
+      message,
+      resumePath
+    } = applicationData;
+
+    const query = `
+      INSERT INTO applications (
+        job_id,
+        full_name,
+        email,
+        phone,
+        notice_period,
+        total_experience,
+        message,
+        resume_path
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `;
+
+    const result = await db.query(query, [
+      jobId,
+      fullName,
+      email,
+      phone,
+      noticePeriod,
+      totalExperience,
+      message,
+      resumePath
+    ]);
+
+    return result.rows[0];
+  },
+
+  /**
    * Perform Full-Text Search on careers
    */
   async search(searchQuery) {

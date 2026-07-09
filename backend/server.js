@@ -108,6 +108,27 @@ app.use(errorMiddleware);
  * Bootstraps the initial Superadmin if no administrators exist in the database.
  * Uses ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_NAME from environment variables.
  */
+async function ensureApplicationTable() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS applications (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+        job_id UUID NOT NULL REFERENCES careers(id) ON DELETE CASCADE,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        notice_period VARCHAR(100) NOT NULL,
+        total_experience VARCHAR(100) NOT NULL,
+        message TEXT NOT NULL,
+        resume_path VARCHAR(2048) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } catch (error) {
+    logger.error('Error creating applications table:', error);
+  }
+}
+
 async function bootstrapAdmin() {
   try {
     const result = await db.query('SELECT COUNT(*) FROM admins WHERE is_deleted = FALSE');
@@ -147,8 +168,28 @@ async function bootstrapAdmin() {
 }
 
 // Start the server
+async function ensureClientsTable() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+        name VARCHAR(255) NOT NULL,
+        logo VARCHAR(2048) NOT NULL,
+        website VARCHAR(2048),
+        display_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } catch (error) {
+    logger.error('Error creating clients table:', error);
+  }
+}
+
 app.listen(PORT, async () => {
   mediaService.initStorage();
+  await ensureApplicationTable();
+  await ensureClientsTable();
   logger.info(`Edge Route Vision backend running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
   await bootstrapAdmin();
 });

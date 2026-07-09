@@ -11,6 +11,8 @@ const AboutPage   = lazy(() => import('./pages/public/AboutPage'));
 const ProductDetail = lazy(() => import('./pages/public/ProductDetail'));
 const Search      = lazy(() => import('./pages/public/Search'));
 const GalleryPage = lazy(() => import('./pages/public/GalleryPage'));
+const Careers = lazy(() => import('./pages/public/Careers'));
+const CareerDetail = lazy(() => import('./pages/public/CareerDetail'));
 const Privacy     = lazy(() => import('./pages/public/Privacy'));
 const Terms       = lazy(() => import('./pages/public/Terms'));
 const Sitemap     = lazy(() => import('./pages/public/Sitemap'));
@@ -36,6 +38,8 @@ function App() {
             <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/search"         element={<Search />} />
             <Route path="/gallery"        element={<GalleryPage />} />
+            <Route path="/careers"        element={<Careers />} />
+            <Route path="/careers/:id"    element={<CareerDetail />} />
             <Route path="/privacy"        element={<Privacy />} />
             <Route path="/terms"          element={<Terms />} />
             <Route path="/sitemap"        element={<Sitemap />} />

@@ -7,20 +7,15 @@ export const careerController = {
    */
   async getAll(req, res, next) {
     try {
-      // By default, public endpoint only returns 'Open' positions
-      // Admin can request all by passing showAll=true
-      const showAll = req.query.showAll === 'true';
       const filters = {};
-      
-      if (!showAll) {
-        filters.status = 'Open';
-      }
-      
+
       if (req.query.department) {
         filters.department = req.query.department;
       }
 
+      console.log('Incoming GET /careers - filters:', filters);
       const vacancies = await careerService.getVacancies(filters);
+      console.log('Fetched Careers:', vacancies?.length ?? 0);
       return res.status(200).json(vacancies);
     } catch (error) {
       next(error);
@@ -50,13 +45,20 @@ export const careerController = {
    */
   async create(req, res, next) {
     try {
+      console.log("================================");
+      console.log("BODY:", req.body);
+      console.log("CONTENT-TYPE:", req.headers["content-type"]);
+      console.log("================================");
+
       const careerData = req.body;
+      console.log('Incoming Career Payload:', careerData);
 
       if (!careerData.title || !careerData.department || !careerData.location || !careerData.employment_type || !careerData.description) {
         return res.status(400).json({ message: 'Missing required fields: title, department, location, employment_type, description' });
       }
 
       const vacancy = await careerService.createVacancy(careerData);
+      console.log('Inserted Career:', vacancy);
 
       await dashboardService.logAdminActivity(
         req.admin.sub,
@@ -175,6 +177,55 @@ export const careerController = {
       return res.status(200).json({
         message: 'Vacancy reopened successfully.',
         vacancy
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Submit a job application
+   */
+  async apply(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { fullName, email, phone, noticePeriod, totalExperience, message } = req.body;
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'Resume upload is required.' });
+      }
+
+      if (!fullName || !email || !phone || !noticePeriod || !totalExperience || !message) {
+        return res.status(400).json({ success: false, message: 'All fields are required.' });
+      }
+
+      const vacancy = await careerService.getVacancyById(id);
+      if (!vacancy) {
+        return res.status(404).json({ success: false, message: 'Career vacancy not found.' });
+      }
+
+      if (String(vacancy.status || '').toLowerCase() !== 'open') {
+        return res.status(400).json({ success: false, message: 'This position is currently closed.' });
+      }
+
+      const application = await careerService.submitApplication({
+        jobId: id,
+        fullName,
+        email,
+        phone,
+        noticePeriod,
+        totalExperience,
+        message,
+        resumeFile: req.file
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Application submitted successfully. Our recruitment team will review your profile and contact you if shortlisted.',
+        data: application,
+        errors: null,
+        timestamp: new Date().toISOString(),
+        requestId: req.requestId
       });
     } catch (error) {
       next(error);

@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { careerController } from '../controllers/career.controller.js';
 import { protect, restrictTo } from '../middlewares/auth.middleware.js';
+import { resumeUpload } from '../middlewares/upload.middleware.js';
 
 const router = Router();
 
 // Public routes
 router.get('/', careerController.getAll);
 router.get('/search', careerController.search);
+router.post('/:id/apply', resumeUpload.single('resume'), careerController.apply);
 router.get('/:id', careerController.getById);
 
 // Admin-only protected routes

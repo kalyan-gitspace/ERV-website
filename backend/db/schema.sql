@@ -221,6 +221,36 @@ CREATE TRIGGER update_careers_updated_at
 BEFORE UPDATE ON careers
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Clients Table
+CREATE TABLE clients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    name VARCHAR(255) NOT NULL,
+    logo VARCHAR(2048) NOT NULL,
+    website VARCHAR(2048),
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Trigger for clients
+CREATE TRIGGER update_clients_updated_at
+BEFORE UPDATE ON clients
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Job Applications Table
+CREATE TABLE applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    job_id UUID NOT NULL REFERENCES careers(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    notice_period VARCHAR(100) NOT NULL,
+    total_experience VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    resume_path VARCHAR(2048) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Projects Table
 CREATE TABLE projects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),

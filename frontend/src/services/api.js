@@ -123,7 +123,12 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    // 2. Attach X-CSRF-Token header for mutating requests
+    // 2. Allow FormData requests to set multipart boundaries automatically
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
+    // 3. Attach X-CSRF-Token header for mutating requests
     const method = config.method ? config.method.toUpperCase() : '';
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
       const csrfToken = getCookie('csrf_token') || getCsrfTokenFromCookie();
