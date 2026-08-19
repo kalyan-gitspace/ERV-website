@@ -61,10 +61,10 @@ export function Login() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 font-sans px-4 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-black text-slate-100 font-sans px-4 overflow-hidden">
       {/* Dynamic glow design */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-3xl" />
+      <div className="absolute top-0 right-1/4 w-125 h-125 bg-indigo-600/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-1/4 w-125 h-125 bg-cyan-600/10 rounded-full blur-3xl" />
 
       <motion.div
         className="relative w-full max-w-md bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl"
@@ -74,7 +74,7 @@ export function Login() {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-100 via-indigo-200 to-slate-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-extrabold tracking-tight bg-linear-to-r from-slate-100 via-indigo-200 to-slate-400 bg-clip-text text-transparent">
             Edge Route Vision
           </h2>
           <p className="mt-2 text-sm text-slate-400 font-light">

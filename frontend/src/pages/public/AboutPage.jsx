@@ -156,7 +156,7 @@ function SectionHeading({ eyebrow, title, subtitle }) {
   return (
     <div className="max-w-3xl space-y-3">
       {eyebrow && (
-        <p className="erv-section-label">
+        <p className="section-eyebrow">
           {eyebrow}
         </p>
       )}
@@ -190,7 +190,7 @@ export function AboutPage() {
 
       <section className="mx-auto max-w-[1480px] px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
         <div className="space-y-4">
-          <p className="erv-section-label">About Edge Route Vision Pvt. Ltd.</p>
+          <p className="section-eyebrow">About Edge Route Vision Pvt. Ltd.</p>
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             Engineering Smarter Roads. Empowering Infrastructure with Intelligence.
           </h1>
@@ -212,7 +212,7 @@ export function AboutPage() {
           <div className="rounded-[28px] border border-white/10 bg-black p-8 shadow-[0_30px_90px_rgba(0,0,0,0.24)]">
             <div className="flex items-center gap-3 text-[#38BDF8]">
               <Cpu className="h-6 w-6" />
-              <p className="erv-section-label">Who We Are</p>
+              <p className="section-eyebrow">Who We Are</p>
             </div>
             <p className="mt-6 text-lg leading-8 text-slate-300">
               Edge Route Vision Pvt. Ltd. is a multidisciplinary team of experienced civil engineers, transportation specialists, AI developers, software engineers, and survey experts committed to transforming infrastructure management through technology.
@@ -331,14 +331,14 @@ export function AboutPage() {
       <section className="border-t border-white/10 bg-black">
         <div className="mx-auto grid max-w-[1480px] gap-10 px-5 py-16 sm:px-8 lg:grid-cols-2 lg:px-10 lg:py-24">
           <div className="rounded-[28px] border border-white/10 bg-[#050505] p-8">
-            <p className="erv-section-label">Vision</p>
+            <p className="section-eyebrow">Vision</p>
             <h3 className="mt-4 text-3xl font-semibold text-white">Our Vision</h3>
             <p className="mt-6 text-lg leading-8 text-slate-300">
               To become a globally recognized leader in intelligent infrastructure engineering by delivering innovative technologies, AI-powered software solutions, and advanced engineering services that enable safer, smarter, and more sustainable transportation infrastructure.
             </p>
           </div>
           <div className="rounded-[28px] border border-white/10 bg-[#050505] p-8">
-            <p className="erv-section-label">Mission</p>
+            <p className="section-eyebrow">Mission</p>
             <h3 className="mt-4 text-3xl font-semibold text-white">Our Mission</h3>
             <p className="mt-6 text-lg leading-8 text-slate-300">
               Our mission is to transform infrastructure management through advanced engineering, intelligent automation, and AI-driven technologies. We strive to provide reliable, accurate, and data-centric solutions that help clients optimize asset performance, improve operational safety, reduce maintenance costs, and make informed engineering decisions.
@@ -369,7 +369,7 @@ export function AboutPage() {
       <section className="border-t border-white/10 bg-black">
         <div className="mx-auto max-w-[1480px] px-5 py-16 sm:px-8 lg:px-10 lg:py-24">
           <div className="rounded-[32px] border border-white/10 bg-[#050505] p-8 shadow-[0_30px_90px_rgba(0,0,0,0.24)] sm:p-10 lg:p-12">
-            <p className="erv-section-label">Closing</p>
+            <p className="section-eyebrow">Closing</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               Building Intelligent Infrastructure for Tomorrow
             </h2>

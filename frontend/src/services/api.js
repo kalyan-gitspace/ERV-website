@@ -6,6 +6,11 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:50
 let accessToken = null;
 let isRefreshing = false;
 let refreshSubscribers = [];
+let refreshFailedAt = 0;
+
+// Settings single-flight cache
+let _settingsPromise = null;
+let _settingsCache = null;
 
 export const getBackendBaseUrl = () => {
   try {
@@ -115,6 +120,24 @@ const onRefreshed = (token) => {
   refreshSubscribers = [];
 };
 
+export const fetchSettings = async () => {
+  if (_settingsCache) return _settingsCache;
+  if (_settingsPromise) return _settingsPromise;
+  _settingsPromise = api.get('/settings')
+    .then((res) => {
+      _settingsCache = res;
+      _settingsPromise = null;
+      return res;
+    })
+    .catch((err) => {
+      _settingsPromise = null;
+      throw err;
+    });
+  return _settingsPromise;
+};
+
+export const clearSettingsCache = () => { _settingsCache = null; _settingsPromise = null; };
+
 // Request Interceptor
 api.interceptors.request.use(
   async (config) => {
@@ -191,6 +214,15 @@ api.interceptors.response.use(
     if (responseStatus === 401 && !isAuthRoute && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // If we recently failed to refresh, avoid retry storm — fail fast
+      const now = Date.now();
+      if (refreshFailedAt && now - refreshFailedAt < 60_000) {
+        // Treat as unauthorized to avoid repeated refresh attempts
+        setAccessToken(null);
+        window.dispatchEvent(new Event('auth:unauthorized'));
+        return Promise.reject(new Error('Session expired.'));
+      }
+
       if (!isRefreshing) {
         isRefreshing = true;
 
@@ -219,6 +251,7 @@ api.interceptors.response.use(
           isRefreshing = false;
           refreshSubscribers = [];
           setAccessToken(null);
+          refreshFailedAt = Date.now();
 
           // Dispatch logout event so AuthContext can clean up state and redirect
           window.dispatchEvent(new Event('auth:unauthorized'));

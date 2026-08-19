@@ -28,12 +28,65 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
 }
 
-.erv-section-label {
-  font-size: 0.92rem;
+button,
+a,
+select,
+summary,
+[role='button'],
+input[type='checkbox'],
+input[type='radio'],
+input[type='file'],
+label:has(input[type='file']) {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+textarea:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']),
+textarea {
+  cursor: text;
+}
+
+.section-eyebrow {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: none;
-  color: #38BDF8;
+  color: #2EA7FF;
+  line-height: 1.4;
+  display: inline-block;
+}
+
+@keyframes clients-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.clients-marquee-track {
+  animation: clients-marquee 24s linear infinite;
+  will-change: transform;
+}
+
+.clients-marquee:hover .clients-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clients-marquee-track {
+    animation: none;
+    transform: none;
+  }
 }
 
 .rich-text-editor__content:empty::before {

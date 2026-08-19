@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PlusCircle, Upload, Trash2, Image as ImageIcon, Sparkles, X } from 'lucide-react';
-import api, { resolveImageUrl } from '../../services/api';
+import api, { resolveImageUrl, fetchSettings, clearSettingsCache } from '../../services/api';
 
 const HERO_SETTING_KEY = 'gallery_hero_image';
 const IMAGES_SETTING_KEY = 'gallery_images';
@@ -55,7 +55,7 @@ export function GalleryAdmin() {
   const loadGalleryData = async () => {
     try {
       setLoading(true);
-      const settings = await api.get('/settings');
+      const settings = await fetchSettings();
       const nextHeroImage = settings?.[HERO_SETTING_KEY] || '';
       const nextGalleryItems = normalizeGalleryItems(settings?.[IMAGES_SETTING_KEY] || []);
       setHeroImage(nextHeroImage || '');
@@ -82,6 +82,8 @@ export function GalleryAdmin() {
         value: getPersistableGalleryItems(nextGalleryItems),
       }),
     ]);
+    // Clear cached settings so subsequent reads fetch latest values
+    try { clearSettingsCache(); } catch (e) { /* ignore */ }
   };
 
   const uploadImage = async (file) => {
@@ -167,6 +169,9 @@ export function GalleryAdmin() {
     try {
       setSaving(true);
       await persistGalleryState(heroImage, galleryItems);
+      // Refresh cached settings and UI
+      try { clearSettingsCache(); } catch (e) {}
+      await loadGalleryData();
       setSavedHeroImage(heroImage);
       setSavedGalleryItems(getPersistableGalleryItems(galleryItems));
       setMessage('Gallery changes saved successfully.');

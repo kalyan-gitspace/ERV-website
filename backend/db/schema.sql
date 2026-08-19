@@ -102,6 +102,11 @@ CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
     name VARCHAR(255) UNIQUE NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL,
+    sub_heading VARCHAR(255),
+    introduction TEXT,
+    content JSONB DEFAULT '[]'::jsonb,
+    status VARCHAR(50) DEFAULT 'enabled',
+    hero_image VARCHAR(2048),
     short_description TEXT NOT NULL,
     full_description TEXT NOT NULL,
     specifications JSONB DEFAULT '{}'::jsonb, -- dynamic key-value specifications

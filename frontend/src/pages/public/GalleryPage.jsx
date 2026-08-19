@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { PublicLayout } from '../../layouts/PublicLayout';
-import api, { resolveImageUrl } from '../../services/api';
+import api, { resolveImageUrl, fetchSettings } from '../../services/api';
 
 const HERO_SETTING_KEY = 'gallery_hero_image';
 const IMAGES_SETTING_KEY = 'gallery_images';
@@ -44,7 +44,7 @@ export function GalleryPage() {
     const loadGallery = async () => {
       try {
         setLoading(true);
-        const settings = await api.get('/settings');
+        const settings = await fetchSettings();
         setHeroImage(getGallerySettingValue(settings, HERO_SETTING_KEY));
         setGalleryItems(normalizeGalleryItems(getGallerySettingValue(settings, IMAGES_SETTING_KEY) || []));
       } catch (error) {

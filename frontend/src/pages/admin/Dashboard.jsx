@@ -5,6 +5,8 @@ import PreviousProjectsAdmin from './PreviousProjectsAdmin';
 import GalleryAdmin from './GalleryAdmin';
 import CareersAdmin from './CareersAdmin';
 import ClientsAdmin from './ClientsAdmin';
+import SocialMediaAdmin from './SocialMediaAdmin';
+import ProductsAdmin from './ProductsAdmin';
 
 export function Dashboard() {
   const { user, logout, changePassword } = useAuth();
@@ -48,7 +50,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 p-6 font-sans text-slate-100">
+    <div className="relative min-h-screen overflow-hidden bg-black p-6 font-sans text-slate-100">
       <div className="absolute left-10 top-10 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" />
       <div className="absolute bottom-10 right-10 h-96 w-96 rounded-full bg-cyan-600/10 blur-3xl" />
 
@@ -65,6 +67,7 @@ export function Dashboard() {
           </div>
 
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 active:scale-[0.98]"
           >
@@ -191,9 +194,11 @@ export function Dashboard() {
         </div>
 
         <GalleryAdmin />
+        <ProductsAdmin />
         <PreviousProjectsAdmin />
         <CareersAdmin />
         <ClientsAdmin />
+        <SocialMediaAdmin />
       </div>
     </div>
   );

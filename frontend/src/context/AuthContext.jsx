@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useCallback, useRef } from 'react';
-import api, { setAccessToken } from '../services/api';
+import api, { setAccessToken, fetchSettings } from '../services/api';
 
 export const AuthContext = createContext(null);
 
@@ -139,9 +139,13 @@ export function AuthProvider({ children }) {
         // Or configure based on environment
         try {
           // Let's assume IDLE_TIMEOUT env is 30 mins
-          const configRes = await api.get('/settings');
-          if (configRes.success && configRes.data?.idleTimeoutMinutes) {
-            idleTimeoutMsRef.current = configRes.data.idleTimeoutMinutes * 60 * 1000;
+          try {
+            const configRes = await fetchSettings();
+            if (configRes && configRes.idleTimeoutMinutes) {
+              idleTimeoutMsRef.current = configRes.idleTimeoutMinutes * 60 * 1000;
+            }
+          } catch (e) {
+            // fallback
           }
         } catch (e) {
           // Fallback to default
@@ -172,11 +176,10 @@ export function AuthProvider({ children }) {
    */
   const checkAuth = useCallback(async () => {
     try {
-      // Rotate token silently
-      const refreshRes = await api.post('/auth/refresh');
-      if (refreshRes.success && refreshRes.data?.accessToken) {
-        setAccessToken(refreshRes.data.accessToken);
-        setUser(refreshRes.data.admin);
+      const payload = await api.post('/auth/refresh', {});
+      if (payload.success && payload.data?.accessToken) {
+        setAccessToken(payload.data.accessToken);
+        setUser(payload.data.admin);
         setIsAuthenticated(true);
         startIdleTimer();
       }

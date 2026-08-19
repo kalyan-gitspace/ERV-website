@@ -12,7 +12,7 @@ export function PublicLayout({ children }) {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#030712] text-slate-100 selection:bg-cyan-400/20 selection:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-[#000000] text-slate-100 selection:bg-cyan-400/20 selection:text-white">
       <Navbar />
       <motion.main
         key={pathname}

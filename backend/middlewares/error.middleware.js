@@ -14,7 +14,7 @@ export function errorMiddleware(err, req, res, next) {
     requestId: req.requestId
   });
 
-  const statusCode = err.statusCode || 500;
+  const statusCode = err.statusCode || err.status || 500;
   const message = err.message || 'Internal Server Error';
   
   // Standardized error response

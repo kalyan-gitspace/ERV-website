@@ -21,6 +21,8 @@ export default function CareersAdmin() {
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const load = async () => {
     try {
@@ -42,6 +44,9 @@ export default function CareersAdmin() {
   const handleChange = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
   const handlePost = async () => {
+    if (saving) return;
+    setSaving(true);
+    setError('');
     try {
       const payload = {
         ...form,
@@ -72,6 +77,9 @@ export default function CareersAdmin() {
       load();
     } catch (err) {
       console.error(err);
+      setError(err.message || 'Unable to save career listing.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -97,7 +105,7 @@ export default function CareersAdmin() {
       await api.delete(`/careers/${id}`);
       window.dispatchEvent(new Event('careers:updated'));
       load();
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); setError(err.message || 'Unable to delete career listing.'); }
   };
 
   const toggleStatus = async (job) => {
@@ -106,7 +114,7 @@ export default function CareersAdmin() {
       else await api.patch(`/careers/${job.id}/reopen`);
       window.dispatchEvent(new Event('careers:updated'));
       load();
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); setError(err.message || 'Unable to update career status.'); }
   };
 
   return (
@@ -114,8 +122,10 @@ export default function CareersAdmin() {
       <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2"><Plus className="h-5 w-5"/> Careers</h2>
-          <button onClick={() => { setForm(emptyForm()); setEditingId(null); window.scrollTo({ top: 0 }); }} className="rounded-md bg-emerald-600 px-3 py-1 text-sm text-white">+ Post a Job</button>
+          <button type="button" onClick={() => { setForm(emptyForm()); setEditingId(null); window.scrollTo({ top: 0 }); }} className="rounded-md bg-emerald-600 px-3 py-1 text-sm text-white">+ Post a Job</button>
         </div>
+
+        {error && <div className="mt-3 rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>}
 
         <div className="mt-4 grid gap-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -137,12 +147,12 @@ export default function CareersAdmin() {
             </select>
           </div>
 
-          <textarea value={form.description} onChange={(e)=>handleChange('description', e.target.value)} placeholder="Job Description" rows={10} className="min-h-[350px] w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200" />
-          <textarea value={form.responsibilities} onChange={(e)=>handleChange('responsibilities', e.target.value)} placeholder="Key Responsibilities (one per line)" rows={10} className="h-[350px] w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200" />
-          <textarea value={form.requirements} onChange={(e)=>handleChange('requirements', e.target.value)} placeholder="Skills Required (one per line)" rows={10} className="h-[350px] w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200" />
+          <textarea value={form.description} onChange={(e)=>handleChange('description', e.target.value)} placeholder="Job Description" rows={10} className="min-h-87.5 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200" />
+          <textarea value={form.responsibilities} onChange={(e)=>handleChange('responsibilities', e.target.value)} placeholder="Key Responsibilities (one per line)" rows={10} className="h-87.5 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200" />
+          <textarea value={form.requirements} onChange={(e)=>handleChange('requirements', e.target.value)} placeholder="Skills Required (one per line)" rows={10} className="h-87.5 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-200" />
 
           <div className="flex items-center gap-3">
-            <button onClick={handlePost} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">{editingId ? 'Save Changes' : 'Post Job'}</button>
+            <button type="button" onClick={handlePost} disabled={saving} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving...' : editingId ? 'Save Changes' : 'Post Job'}</button>
           </div>
 
           <h3 className="mt-6 text-sm font-bold text-slate-200">Posted Jobs</h3>
@@ -157,9 +167,9 @@ export default function CareersAdmin() {
                     <div className="text-sm text-slate-400">{job.location} • {job.experience}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={()=>toggleStatus(job)} className="rounded-md bg-slate-700 px-3 py-1 text-sm text-white">{job.status === 'Open' ? 'Disable' : 'Enable'}</button>
-                    <button onClick={()=>handleEdit(job)} className="rounded-md bg-slate-700 px-3 py-1 text-sm text-white"><Edit className="h-4 w-4"/></button>
-                    <button onClick={()=>handleDelete(job.id)} className="rounded-md bg-rose-600 px-3 py-1 text-sm text-white"><Trash2 className="h-4 w-4"/></button>
+                    <button type="button" onClick={()=>toggleStatus(job)} className="rounded-md bg-slate-700 px-3 py-1 text-sm text-white" title={job.status === 'Open' ? 'Disable career' : 'Enable career'}>{job.status === 'Open' ? 'Disable' : 'Enable'}</button>
+                    <button type="button" onClick={()=>handleEdit(job)} className="rounded-md bg-slate-700 px-3 py-1 text-sm text-white" title="Edit career"><Edit className="h-4 w-4"/></button>
+                    <button type="button" onClick={()=>handleDelete(job.id)} className="rounded-md bg-rose-600 px-3 py-1 text-sm text-white" title="Delete career"><Trash2 className="h-4 w-4"/></button>
                   </div>
                 </div>
               ))}

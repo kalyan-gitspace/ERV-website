@@ -57,9 +57,12 @@ export const productController = {
     try {
       const { galleryImageIds, ...productData } = req.body;
 
-      if (!productData.name || !productData.slug || !productData.short_description || !productData.full_description) {
-        return res.status(400).json({ message: 'Missing required fields: name, slug, short_description, full_description' });
+      if (!productData.name || !productData.slug || !(productData.introduction || productData.short_description)) {
+        return res.status(400).json({ message: 'Missing required fields: name, slug, sub_heading, introduction' });
       }
+
+      productData.short_description = productData.short_description || productData.introduction;
+      productData.full_description = productData.full_description || productData.introduction;
 
       const product = await productService.createProduct(productData, galleryImageIds);
       
@@ -87,6 +90,9 @@ export const productController = {
     try {
       const { id } = req.params;
       const { galleryImageIds, ...productData } = req.body;
+
+      productData.short_description = productData.short_description || productData.introduction;
+      productData.full_description = productData.full_description || productData.introduction;
 
       const product = await productService.updateProduct(id, productData, galleryImageIds);
       

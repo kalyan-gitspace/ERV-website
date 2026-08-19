@@ -41,8 +41,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // 4. Request Parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   setHeaders: (res) => {
@@ -186,10 +186,107 @@ async function ensureClientsTable() {
   }
 }
 
+async function ensureProductCmsColumns() {
+  try {
+    await db.query(`
+      ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS sub_heading VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS introduction TEXT,
+        ADD COLUMN IF NOT EXISTS content JSONB DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'enabled',
+        ADD COLUMN IF NOT EXISTS hero_image VARCHAR(2048)
+    `);
+  } catch (error) {
+    logger.error('Error adding product CMS columns:', error);
+  }
+}
+
+async function ensureLegacyProducts() {
+  const legacyProducts = [
+    {
+      name: 'LDD (Laser Detection Device)',
+      slug: 'ldd',
+      subHeading: 'High-integrity path scanner and laser crack detection array.',
+      introduction: 'The Laser Detection Device (LDD) represents the absolute gold standard in pathway surface scanning. Operating a high-speed rotating LiDAR laser module, the LDD sweeps the asphalt surface to compile sub-millimeter 3D point cloud maps. Dynamic algorithms detect road surface distress, cracking, potholes, and deformation in real time at highway speeds.',
+      summary: 'Sub-millimeter LiDAR path scanner detecting structural distress at scale.',
+      specifications: {
+        'Laser Wave Length': '905nm eye-safe Class 1 Laser',
+        'Scan Rate': '250,000 points per second, 360-degree sweep',
+        'Defect Resolution': 'Detects structural crack lines down to 0.5 millimeters',
+        'Mapping Speeds': 'Maintains maximum precision at vehicle speeds up to 120 km/h',
+        'Onboard Storage': '2TB NVMe local cache storage',
+        'Operational Rating': 'NEMA 4X / IP67 ruggedized vibration-isolated casing'
+      },
+      applications: [
+        'High-speed highway pothole and crack surveys',
+        'Bridge deck and runway surface scanning',
+        'Structural paving profile analysis',
+        'Localized pavement condition index (PCI) calculations'
+      ],
+      benefits: [
+        'Sub-millimeter crack analysis avoids manual path inspection overhead.',
+        'Runs mapping sweeps dynamically without stopping or slowing down route traffic.',
+        'Onboard point cloud processors compress output logs for instant telemetry uplink.'
+      ]
+    },
+    {
+      name: 'NSV (Network Stream Video)',
+      slug: 'nsv',
+      subHeading: 'Real-time edge-encoded video streaming with sub-millisecond telemetry overlay.',
+      introduction: 'The ERV Network Stream Video (NSV) system is a military-grade edge-vision encoder designed to capture, process, and stream multi-angle HDR video pipelines under demanding highway environments. Built with localized deep-learning computer vision caches, the NSV embeds telemetry layers directly into live streams, enabling route coordinators to inspect paths in real time.',
+      summary: 'High-fidelity edge visual stream array with integrated path analytics.',
+      specifications: {
+        'Sensor Array': '4K HDR CMOS Optoelectronic Sensor, 120fps',
+        'Encoding Protocol': 'H.265/HEVC hardware acceleration, sub-100ms latency',
+        'Telemetry Overlays': 'GPS Coordinate mapping, speed index, grade index, time-codes',
+        'Connectivity': 'Integrated Dual-SIM 5G LTE, Gigabit Ethernet port',
+        'Protection Standard': 'IP68 certified military-grade dust and water protection',
+        'Power Intake': '12-24V DC automotive standard input, 15W active load'
+      },
+      applications: [
+        'Real-time highway path telemetry streaming',
+        'Autonomous logistics route visual monitoring',
+        'Structural route survey telemetry verification',
+        'Intelligent highway traffic flow path-analytics'
+      ],
+      benefits: [
+        'Sub-millisecond overlay sync guarantees precision mapping.',
+        'Rugged heat-sink casing guarantees operation between -40°C to +85°C.',
+        'Active path mapping continues offline utilizing local caching logs.'
+      ]
+    }
+  ];
+
+  try {
+    for (const product of legacyProducts) {
+      await db.query(`
+        INSERT INTO products (
+          name, slug, sub_heading, introduction, content, status, short_description,
+          full_description, specifications, applications, benefits, features
+        ) VALUES ($1, $2, $3, $4, '[]'::jsonb, 'enabled', $5, $4, $6::jsonb, $7, $8, '{}')
+        ON CONFLICT DO NOTHING
+      `, [
+        product.name,
+        product.slug,
+        product.subHeading,
+        product.introduction,
+        product.summary,
+        JSON.stringify(product.specifications),
+        product.applications,
+        product.benefits
+      ]);
+    }
+  } catch (error) {
+    logger.error('Error preserving legacy products:', error);
+  }
+}
+
 app.listen(PORT, async () => {
   mediaService.initStorage();
   await ensureApplicationTable();
   await ensureClientsTable();
+  await ensureProductCmsColumns();
+  await ensureLegacyProducts();
   logger.info(`Edge Route Vision backend running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
   await bootstrapAdmin();
 });

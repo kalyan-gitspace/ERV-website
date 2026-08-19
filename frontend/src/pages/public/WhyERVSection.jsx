@@ -27,7 +27,7 @@ export default function WhyERVSection() {
     <section className="relative -mt-[230px] w-full bg-black pt-[-100px] pb-24">
       <div className="mx-auto max-w-[1720px] px-6 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-[960px] text-center">
-          <p className="erv-section-label">Why ERV</p>
+          <p className="section-eyebrow">Why ERV</p>
           <h2 className="mt-6 text-[44px] font-[550] leading-[1.05] text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Reveal Hidden Road Risks: ERV&apos;s Data-Powered Intelligence
           </h2>

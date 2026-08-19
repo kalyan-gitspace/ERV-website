@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ArrowRight, CalendarDays, Globe2, Users, Target, MapPin } from 'lucide-react';
 import Logo from '../../components/Logo';
 import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
 import SEO from '../../components/SEO';
 import heroImage from '../../assets/hero.png';
 import WhyERVSection from './WhyERVSection';
@@ -20,7 +21,7 @@ const stats = [
 
 function HeroHeading() {
   return (
-    <div className="relative mt-8 w-[780px] max-w-none z-20">
+    <div className="relative mt-8 w-195 max-w-none z-20">
       {heroLines.map((line) => (
         <p key={line} className="whitespace-nowrap mb-3 last:mb-0 text-[72px] font-[550] leading-[0.92] tracking-[-0.04em] text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
           {line}
@@ -32,12 +33,12 @@ function HeroHeading() {
 
 function StatsCard() {
   return (
-    <div className="mt-12 grid w-[1120px] grid-cols-2 gap-3 rounded-[24px] border border-white/8 bg-[rgba(10,10,10,0.95)] pt-[34px] pb-[34px] pl-[34px] pr-[18px] backdrop-blur-[10px] text-white sm:grid-cols-5 sm:gap-2">
+    <div className="mt-12 grid w-280 grid-cols-2 gap-3 rounded-3xl border border-white/8 bg-[rgba(10,10,10,0.95)] pt-8.5 pb-8.5 pl-8.5 pr-4.5 backdrop-blur-[10px] text-white sm:grid-cols-5 sm:gap-2">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.value} className="flex w-[190px] h-[140px] flex-col items-center justify-center gap-3 rounded-[20px] border border-white/8 bg-white/[0.02] text-center">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#38BDF8]">
+          <div key={stat.value} className="flex w-47.5 h-35 flex-col items-center justify-center gap-3 rounded-[20px] border border-white/8 bg-white/2 text-center">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-brand-cyan">
               <Icon className="h-5 w-5" strokeWidth={1.8} />
             </div>
             <p className="text-[28px] font-semibold leading-none">{stat.value}</p>
@@ -71,33 +72,33 @@ export function HomePage() {
       <section className="relative bg-black">
         <div className="absolute right-0 top-0 bottom-0 bg-black" />
 
-        <div className="relative z-10 mx-auto flex max-w-[1720px] flex-col px-6 pt-[104px] sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-12 lg:pt-[72px] pb-0">
+        <div className="relative z-10 mx-auto flex max-w-[1720px] flex-col px-6 pt-26 sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-12 lg:pt-18 pb-0">
           <div className="flex w-full flex-col justify-center lg:w-[37%] -mt-70">
             <div className="flex items-center gap-4">
-             <div className="h-[2px] w-[44px] rounded-full bg-[#2EA7FF]" />
-             <p className="erv-section-label m-0" style={{ fontFamily: 'Inter, sans-serif' }}>
+             <div className="h-0.5 w-11 rounded-full bg-[#2EA7FF]" />
+             <p className="section-eyebrow m-0">
                 Engineering Smarter Roads. Powering Intelligent Infrastructure.
              </p>
         </div>
             <HeroHeading />
-            <p className="mt-[34px] mb-[30px] max-w-[500px] text-[20px] leading-[1.7] tracking-normal text-[#C8D0D9]">
+            <p className="mt-8.5 mb-7.5 max-w-125 text-[20px] leading-[1.7] tracking-normal text-[#C8D0D9]">
               ERV delivers advanced road and infrastructure data intelligence through cutting-edge technology, precision systems, and innovative engineering.
             </p>
-            <div className="mb-[30px]">
+            <div className="mb-7.5">
               <a
                 href="#solutions"
-                className="inline-flex items-center gap-[14px] text-[20px] font-semibold text-white transition-colors duration-300 hover:text-[#60A5FA]"
+                className="inline-flex items-center gap-3.5 text-[20px] font-semibold text-white transition-colors duration-300 hover:text-[#60A5FA]"
               >
                 Explore Our Solutions
                 <ArrowRight className="h-5 w-5 text-[#2EA7FF]" strokeWidth={2} />
               </a>
             </div>
-            <div className="relative z-20 mt-[30px] sm:mt-[34px]">
+            <div className="relative z-20 mt-7.5 sm:mt-8.5">
               <StatsCard />
             </div>
           </div>
 
-          <div className="relative mt-0 h-[1100px] w-full lg:w-[100%] overflow-visible">
+          <div className="relative mt-0 h-275 w-full lg:w-full overflow-visible">
             <img
               src={heroImage}
               alt="NSV vehicle"
@@ -116,6 +117,7 @@ export function HomePage() {
       <WhyERVSection />
       <PreviousProjectsSection />
       <ClientsSection />
+      <Footer />
     </main>
   );
 }

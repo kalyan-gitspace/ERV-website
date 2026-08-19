@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Linkedin, Mail, MapPin, Send, Twitter, Youtube } from 'lucide-react';
+import { Linkedin, Mail, MapPin, Instagram, Facebook } from 'lucide-react';
 import Logo from './Logo';
+import api, { fetchSettings } from '../services/api';
 
 const footerLinks = {
   Quick: [
@@ -13,30 +14,43 @@ const footerLinks = {
   Products: [
     { label: 'LDD', href: '/products/ldd' },
     { label: 'NSV', href: '/products/nsv' },
-    { label: 'Specifications', href: '/products' },
     { label: 'Search', href: '/search' },
   ],
   Company: [
-    { label: 'Contact', href: '/contact' },
     { label: 'Privacy', href: '/privacy' },
     { label: 'Terms', href: '/terms' },
-    { label: 'Sitemap', href: '/sitemap' },
   ],
 };
 
-export function Footer() {
-  const [email, setEmail] = useState('');
-  const [done, setDone] = useState(false);
+const SOCIAL_KEYS = {
+  linkedin: 'social_linkedin',
+  instagram: 'social_instagram',
+  facebook: 'social_facebook',
+};
 
-  const subscribe = (event) => {
-    event.preventDefault();
-    if (!email.trim()) return;
-    setDone(true);
-    setEmail('');
-  };
+export function Footer() {
+  const [socialLinks, setSocialLinks] = useState({ linkedin: '', instagram: '', facebook: '' });
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const settings = await fetchSettings();
+        if (!mounted) return;
+        setSocialLinks({
+          linkedin: settings?.[SOCIAL_KEYS.linkedin] || '',
+          instagram: settings?.[SOCIAL_KEYS.instagram] || '',
+          facebook: settings?.[SOCIAL_KEYS.facebook] || '',
+        });
+      } catch (err) {
+        // silently ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   return (
-    <footer className="border-t border-white/10 bg-[#020617]">
+    <footer id="site-footer" className="border-t border-white/10 bg-[#000000]">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_.8fr]">
         <div className="space-y-8">
           <Link to="/" aria-label="ERV home" className="inline-flex">
@@ -47,14 +61,19 @@ export function Footer() {
               Precision route intelligence, edge visual systems, and survey technology for critical infrastructure teams.
             </p>
             <div className="space-y-3">
-              <a href="mailto:info@edgeroutevision.com" className="flex items-center gap-3 text-slate-400 transition-colors hover:text-cyan-200">
+              <div className="flex items-center gap-3 text-slate-400">
                 <Mail className="h-4 w-4" />
-                info@edgeroutevision.com
-              </a>
-              <p className="flex items-center gap-3 text-slate-400">
+                <span>info@edgeroutevision.com</span>
+              </div>
+              <a
+                href="https://maps.app.goo.gl/vymEhQFAfmZbZquK9"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-slate-400 transition-colors hover:text-cyan-200"
+              >
                 <MapPin className="h-4 w-4" />
-                Global engineering operations
-              </p>
+                Edge Route Vision Pvt. Ltd.
+              </a>
             </div>
           </div>
         </div>
@@ -79,50 +98,65 @@ export function Footer() {
 
       <div className="border-y border-white/10 bg-white/[0.02]">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center">
-          <form onSubmit={subscribe} className="grid gap-3 sm:grid-cols-[minmax(0,360px)_auto]">
-            <label className="sr-only" htmlFor="footer-newsletter">Email address</label>
-            <input
-              id="footer-newsletter"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder={done ? 'Updates enabled' : 'Engineering updates email'}
-              className="h-11 border border-white/10 bg-[#030712]/70 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-cyan-300/70"
-            />
-            <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 bg-[#2563EB] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#60A5FA]">
-              <Send className="h-4 w-4" />
-              Subscribe
-            </button>
-          </form>
+          <div />
 
-          <div className="flex items-center gap-2">
-            {[
-              { href: 'https://linkedin.com/company/edge-route-vision', label: 'LinkedIn', icon: Linkedin },
-              { href: 'https://twitter.com/edgeroutevision', label: 'Twitter', icon: Twitter },
-              { href: 'https://youtube.com/c/edgeroutevision', label: 'YouTube', icon: Youtube },
-            ].map(({ href, label, icon: Icon }) => (
+          <div className="flex items-center gap-3">
+            {socialLinks.linkedin ? (
               <a
-                key={label}
-                href={href}
+                href={socialLinks.linkedin}
                 target="_blank"
-                rel="noreferrer"
+                rel="noreferrer noopener"
                 className="icon-button"
-                aria-label={label}
-                title={label}
+                aria-label="LinkedIn"
+                title="LinkedIn"
               >
-                <Icon className="h-4 w-4" />
+                <Linkedin className="h-4 w-4" />
               </a>
-            ))}
+            ) : (
+              <div className="icon-button opacity-40" aria-hidden>
+                <Linkedin className="h-4 w-4" />
+              </div>
+            )}
+
+            {socialLinks.instagram ? (
+              <a
+                href={socialLinks.instagram}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="icon-button"
+                aria-label="Instagram"
+                title="Instagram"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
+            ) : (
+              <div className="icon-button opacity-40" aria-hidden>
+                <Instagram className="h-4 w-4" />
+              </div>
+            )}
+
+            {socialLinks.facebook ? (
+              <a
+                href={socialLinks.facebook}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="icon-button"
+                aria-label="Facebook"
+                title="Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </a>
+            ) : (
+              <div className="icon-button opacity-40" aria-hidden>
+                <Facebook className="h-4 w-4" />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p>Copyright 2026 Edge Route Vision Pvt. Ltd. All rights reserved.</p>
-        <Link to="/contact" className="inline-flex items-center gap-2 text-slate-500 transition-colors hover:text-cyan-200">
-          Contact Us
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
       </div>
     </footer>
   );

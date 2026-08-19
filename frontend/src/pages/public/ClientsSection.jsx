@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import api, { resolveImageUrl } from '../../services/api';
 
 export default function ClientsSection() {
@@ -32,6 +32,11 @@ export default function ClientsSection() {
     return () => window.removeEventListener('clients:updated', handleClientsUpdated);
   }, []);
 
+  const marqueeClients = useMemo(() => {
+    if (!clients.length) return [];
+    return [...clients, ...clients];
+  }, [clients]);
+
   if (loading || !clients.length) {
     return null;
   }
@@ -39,39 +44,51 @@ export default function ClientsSection() {
   return (
     <section className="relative w-full bg-black py-24">
       <div className="mx-auto max-w-[1720px] px-6 sm:px-8 lg:px-12">
-        <div className="mb-10 max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-[#60A5FA]">Our Clients</p>
-          <h2 className="text-[40px] font-[550] leading-[1.05] text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Trusted by businesses across infrastructure, energy, and transportation.
+        <div className="mb-10 max-w-190">
+          <p className="section-eyebrow mb-4">Our Clients</p>
+          <h2 className="max-w-190 text-[clamp(1.9rem,3.2vw,2.7rem)] font-semibold leading-[1.08] text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Trusted by businesses across
+            <br className="hidden sm:block" />
+            infrastructure, energy, and transportation.
           </h2>
           <p className="mt-6 max-w-2xl text-lg leading-[1.75] text-[#C8D0D9]">
             We partner with the industry’s leading engineers, contractors, and agencies to deliver intelligent survey, inspection, and road asset management solutions.
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#050505] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)]">
-          <div className="flex items-center gap-4 overflow-x-auto pb-4 pr-2 text-center scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-            {clients.map((client) => {
-              const logoUrl = resolveImageUrl(client.logo);
-              return (
-                <a
-                  key={client.id}
-                  href={client.website || '#'}
-                  target={client.website ? '_blank' : '_self'}
-                  rel={client.website ? 'noreferrer noopener' : undefined}
-                  className="flex min-w-[170px] flex-col items-center justify-center gap-4 rounded-[22px] border border-white/10 bg-white/5 px-4 py-6 text-white transition duration-300 hover:border-[#2EA7FF]/40 hover:bg-white/10"
-                >
-                  <div className="flex h-20 w-full items-center justify-center rounded-3xl bg-[#0C1420] p-4">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt={client.name} className="max-h-14 max-w-full object-contain" />
-                    ) : (
-                      <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">{client.name}</span>
-                    )}
+        <div className="overflow-hidden rounded-4xl border border-white/10 bg-[#030303] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.35)] sm:p-8">
+          <div className="clients-marquee relative overflow-hidden">
+            <div className="clients-marquee-track flex w-max items-center gap-4 sm:gap-6">
+              {marqueeClients.map((client, index) => {
+                const logoUrl = resolveImageUrl(client.logo);
+                const hasWebsite = Boolean(client.website?.trim());
+                return (
+                  <div
+                    key={`${client.id || client.name}-${index}`}
+                    className="flex h-24 w-[clamp(144px,16vw,220px)] shrink-0 items-center justify-center px-4 py-5"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!hasWebsite) return;
+                        window.open(client.website, '_blank', 'noopener,noreferrer');
+                      }}
+                      className="flex h-full w-full items-center justify-center focus:outline-none"
+                      aria-label={hasWebsite ? `Visit ${client.name}` : client.name}
+                    >
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt={client.name}
+                          className="max-h-12 w-full max-w-30 object-contain opacity-75 transition duration-300 hover:opacity-100"
+                          style={{ filter: 'grayscale(100%) brightness(0) invert(1) opacity(0.75)' }}
+                        />
+                      ) : null}
+                    </button>
                   </div>
-                  <span className="text-sm font-medium text-[#C8D0D9]">{client.name}</span>
-                </a>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

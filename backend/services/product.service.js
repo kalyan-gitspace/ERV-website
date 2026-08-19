@@ -2,11 +2,26 @@ import { productRepository } from '../repositories/product.repository.js';
 import logger from '../config/logger.js';
 
 export const productService = {
+  normalizeProduct(product) {
+    if (!product) return null;
+    return {
+      ...product,
+      sub_heading: product.sub_heading || product.tagline || '',
+      introduction: product.introduction || product.short_description || '',
+      hero_image: product.hero_url || product.hero_image || product.thumbnail_url || '',
+      content: product.content || '',
+      specs: Array.isArray(product.specs)
+        ? product.specs
+        : Object.entries(product.specifications || {}).map(([name, value]) => ({ name, value })),
+      advantages: product.advantages || product.benefits || []
+    };
+  },
+
   /**
    * Fetch all products
    */
   async getAllProducts() {
-    return await productRepository.findAll();
+    return (await productRepository.findAll()).map((product) => this.normalizeProduct(product));
   },
 
   /**
@@ -18,10 +33,10 @@ export const productService = {
 
     // Fetch additional gallery images
     const images = await productRepository.getProductImages(product.id);
-    return {
+    return this.normalizeProduct({
       ...product,
       galleryImages: images
-    };
+    });
   },
 
   /**
@@ -32,10 +47,10 @@ export const productService = {
     if (!product) return null;
 
     const images = await productRepository.getProductImages(product.id);
-    return {
+    return this.normalizeProduct({
       ...product,
       galleryImages: images
-    };
+    });
   },
 
   /**

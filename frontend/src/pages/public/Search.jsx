@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { PublicLayout } from '../../layouts/PublicLayout';
 import api from '../../services/api';
 import { Search as SearchIcon, ShieldAlert, Cpu, Image, Briefcase, ChevronRight, Loader2 } from 'lucide-react';
@@ -13,6 +13,96 @@ export function Search() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState({ products: [], gallery: [], careers: [] });
   const [error, setError] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const containerRef = useRef(null);
+  const navigate = useNavigate();
+  // Static site pages and known products to ensure pages always surface in search
+  const staticPages = [
+    { id: 'home', title: 'Home', description: 'Welcome to Edge Route Vision', path: '/' },
+    { id: 'about', title: 'About Us', description: 'About Edge Route Vision', path: '/about' },
+    { id: 'gallery', title: 'Gallery', description: 'Explore ERV project and field imagery', path: '/gallery' },
+    { id: 'careers', title: 'Careers', description: 'Open job vacancies at ERV', path: '/careers' },
+    { id: 'search', title: 'Search', description: 'Search the site', path: '/search' },
+    { id: 'privacy', title: 'Privacy', description: 'Privacy policy', path: '/privacy' },
+    { id: 'terms', title: 'Terms', description: 'Terms and conditions', path: '/terms' },
+  ];
+
+  const staticProducts = [
+    { id: 'nsv', title: 'NSV', description: 'Network Survey Vehicle', path: '/products/nsv', keywords: ['nsv'] },
+    { id: 'ldd', title: 'LDD', description: 'Laser Detection Device', path: '/products/ldd', keywords: ['ldd'] },
+    { id: 'mbiu', title: 'MBIU', description: 'MBIU product', path: '/products/mbiu', keywords: ['mbiu'] },
+    { id: 'pfm', title: 'PFM', description: 'PFM product', path: '/products/pfm', keywords: ['pfm'] },
+  ];
+
+  // Debounce live suggestions when typing (does not change URL until submit)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query && query.trim()) {
+        executeSearch(query);
+        setShowDropdown(true);
+      } else {
+        setResults({ products: [], gallery: [], careers: [] });
+        setShowDropdown(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Combine backend results with static pages/products
+  const resolveCombinedResults = (backendResults = { products: [], gallery: [], careers: [] }, q = '') => {
+    const lower = (q || '').toLowerCase().trim();
+    const pageMatches = staticPages.filter((p) => {
+      return (
+        p.title.toLowerCase().includes(lower) ||
+        p.description.toLowerCase().includes(lower) ||
+        p.path.toLowerCase().includes(lower)
+      );
+    });
+
+    const productMatches = [];
+    // backend products first
+    if (Array.isArray(backendResults.products)) {
+      backendResults.products.forEach((p) => {
+        if (!p) return;
+        const hay = `${p.name || ''} ${p.summary || ''} ${(p.description || '')}`.toLowerCase();
+        if (hay.includes(lower)) productMatches.push({ id: `p-${p.id}`, title: p.name, description: p.summary || p.description || '', path: `/products/${p.slug}` });
+      });
+    }
+
+    // include staticProducts if not already matched
+    staticProducts.forEach((sp) => {
+      const hay = `${sp.title} ${sp.description} ${(sp.keywords||[]).join(' ')}`.toLowerCase();
+      if (hay.includes(lower) && !productMatches.find((x) => x.path === sp.path)) {
+        productMatches.push({ id: `sp-${sp.id}`, title: sp.title, description: sp.description, path: sp.path });
+      }
+    });
+
+    const galleryMatches = Array.isArray(backendResults.gallery) ? backendResults.gallery : [];
+    const careerMatches = Array.isArray(backendResults.careers) ? backendResults.careers : [];
+
+    return { pages: pageMatches, products: productMatches, gallery: galleryMatches, careers: careerMatches };
+  };
+
+  // Close dropdown on outside click or Escape
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowDropdown(false);
+    };
+    const onMouse = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onMouse);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onMouse);
+    };
+  }, []);
+
+  
 
   const executeSearch = async (searchTerm) => {
     if (!searchTerm.trim()) {
@@ -59,14 +149,14 @@ export function Search() {
 
   return (
     <PublicLayout>
-      <div className="relative min-h-screen bg-slate-950 py-16 px-6 font-sans">
+      <div ref={containerRef} className="relative min-h-screen bg-[#000000] pt-23 pb-16 px-6 font-sans">
         <div className="absolute top-10 left-10 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl" />
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl animate-pulse" />
 
-        <div className="relative max-w-4xl mx-auto space-y-12">
+        <section className="search-page relative max-w-4xl mx-auto space-y-12">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-slate-100 to-slate-400 bg-clip-text text-transparent sm:text-5xl">
+          <div className="search-page-header text-center space-y-4">
+            <h1 className="text-4xl font-extrabold tracking-tight leading-[1.2] bg-linear-to-r from-slate-100 to-slate-400 bg-clip-text text-transparent sm:text-5xl">
               Search Catalog
             </h1>
             <p className="max-w-md mx-auto text-sm text-slate-400 font-light">
@@ -91,6 +181,88 @@ export function Search() {
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <SearchIcon className="w-5 h-5" />}
               </button>
+              {/* Live dropdown */}
+              {showDropdown && (
+                (() => {
+                  const combined = resolveCombinedResults(results, query);
+                  const any = combined.pages.length + combined.products.length + combined.gallery.length + combined.careers.length;
+                  return (
+                    <div className="absolute top-full left-0 mt-3 w-full max-w-2xl rounded-2xl border border-white/10 bg-[#000000] p-2 shadow-xl z-50 text-white">
+                      {/* Pages */}
+                      {combined.pages.length > 0 && (
+                        <div className="py-1">
+                          <div className="px-3 pb-1 text-[11px] uppercase text-slate-500">Pages</div>
+                          {combined.pages.slice(0,5).map((p) => (
+                            <button
+                              key={p.id}
+                              onClick={() => { setShowDropdown(false); navigate(p.path); }}
+                              className="w-full text-left block px-3 py-2 text-sm hover:bg-[#0f1720] rounded transition-colors"
+                            >
+                              <div className="font-semibold text-white">{p.title}</div>
+                              <div className="text-xs text-slate-400 truncate">{p.description}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Products */}
+                      {combined.products.length > 0 && (
+                        <div className="py-1">
+                          <div className="px-3 pb-1 text-[11px] uppercase text-slate-500">Products</div>
+                          {combined.products.slice(0,8).map((p) => (
+                            <button
+                              key={p.id}
+                              onClick={() => { setShowDropdown(false); navigate(p.path); }}
+                              className="w-full text-left block px-3 py-2 text-sm hover:bg-[#0f1720] rounded transition-colors"
+                            >
+                              <div className="font-semibold text-white">{p.title}</div>
+                              <div className="text-xs text-slate-400 truncate">{p.description}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Careers */}
+                      {combined.careers.length > 0 && (
+                        <div className="py-1">
+                          <div className="px-3 pb-1 text-[11px] uppercase text-slate-500">Careers</div>
+                          {combined.careers.slice(0,6).map((c) => (
+                            <button
+                              key={`c-${c.id}`}
+                              onClick={() => { setShowDropdown(false); navigate(`/careers/${c.id}`); }}
+                              className="w-full text-left block px-3 py-2 text-sm hover:bg-[#0f1720] rounded transition-colors"
+                            >
+                              <div className="font-semibold text-white">{c.title || c.position || c.name}</div>
+                              <div className="text-xs text-slate-400 truncate">{c.department || c.location || ''}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Gallery */}
+                      {combined.gallery.length > 0 && (
+                        <div className="py-1">
+                          <div className="px-3 pb-1 text-[11px] uppercase text-slate-500">Gallery</div>
+                          {combined.gallery.slice(0,6).map((g) => (
+                            <button
+                              key={`g-${g.id}`}
+                              onClick={() => { setShowDropdown(false); navigate('/gallery'); }}
+                              className="w-full text-left block px-3 py-2 text-sm hover:bg-[#0f1720] rounded transition-colors"
+                            >
+                              <div className="font-semibold text-white">{g.title || g.name || 'Gallery item'}</div>
+                              <div className="text-xs text-slate-400 truncate">Gallery</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {!any && (
+                        <div className="px-3 py-2 text-sm text-slate-400">No results found</div>
+                      )}
+                    </div>
+                  );
+                })()
+              )}
             </div>
           </form>
 
@@ -114,7 +286,7 @@ export function Search() {
             {/* Products matches */}
             {results.products.length > 0 && (
               <section className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2 pl-2">
+                <h3 className="section-eyebrow flex items-center gap-2 pl-2">
                   <Cpu className="w-4 h-4" />
                   Product Showcases ({results.products.length})
                 </h3>
@@ -143,7 +315,7 @@ export function Search() {
             {/* Gallery matches */}
             {results.gallery.length > 0 && (
               <section className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 pl-2">
+                <h3 className="section-eyebrow flex items-center gap-2 pl-2">
                   <Image className="w-4 h-4" />
                   Gallery Records ({results.gallery.length})
                 </h3>
@@ -174,7 +346,7 @@ export function Search() {
             {/* Careers matches */}
             {results.careers.length > 0 && (
               <section className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2 pl-2">
+                <h3 className="section-eyebrow flex items-center gap-2 pl-2">
                   <Briefcase className="w-4 h-4" />
                   Career Vacancies ({results.careers.length})
                 </h3>
@@ -216,7 +388,7 @@ export function Search() {
               </div>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </PublicLayout>
   );

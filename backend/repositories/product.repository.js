@@ -67,22 +67,22 @@ export const productRepository = {
    */
   async create(productData) {
     const {
-      name, slug, short_description, full_description, specifications,
+      name, slug, sub_heading, introduction, content, status, hero_image, short_description, full_description, specifications,
       applications, benefits, features, thumbnail_media_id, hero_media_id,
       brochure_media_id, meta_title, meta_description, meta_keywords
     } = productData;
 
     const query = `
       INSERT INTO products (
-        name, slug, short_description, full_description, specifications,
+        name, slug, sub_heading, introduction, content, status, hero_image, short_description, full_description, specifications,
         applications, benefits, features, thumbnail_media_id, hero_media_id,
         brochure_media_id, meta_title, meta_description, meta_keywords
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       RETURNING *
     `;
 
     const params = [
-      name, slug, short_description, full_description, JSON.stringify(specifications),
+      name, slug, sub_heading, introduction, JSON.stringify(content ?? ''), status || 'enabled', hero_image, short_description, full_description, JSON.stringify(specifications || {}),
       applications, benefits, features, thumbnail_media_id, hero_media_id,
       brochure_media_id, meta_title, meta_description, meta_keywords
     ];
@@ -96,7 +96,8 @@ export const productRepository = {
    */
   async update(id, productData) {
     const {
-      name, slug, short_description, full_description, specifications,
+      name, slug, sub_heading, introduction, content, status, short_description, full_description, specifications,
+        hero_image,
       applications, benefits, features, thumbnail_media_id, hero_media_id,
       brochure_media_id, meta_title, meta_description, meta_keywords
     } = productData;
@@ -105,25 +106,30 @@ export const productRepository = {
       UPDATE products SET
         name = $1,
         slug = $2,
-        short_description = $3,
-        full_description = $4,
-        specifications = $5,
-        applications = $6,
-        benefits = $7,
-        features = $8,
-        thumbnail_media_id = $9,
-        hero_media_id = $10,
-        brochure_media_id = $11,
-        meta_title = $12,
-        meta_description = $13,
-        meta_keywords = $14,
+        sub_heading = $3,
+        introduction = $4,
+        content = $5,
+        status = $6,
+        hero_image = $7,
+        short_description = $8,
+        full_description = $9,
+        specifications = $10,
+        applications = $11,
+        benefits = $12,
+        features = $13,
+        thumbnail_media_id = $14,
+        hero_media_id = $15,
+        brochure_media_id = $16,
+        meta_title = $17,
+        meta_description = $18,
+        meta_keywords = $19,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $15 AND is_deleted = FALSE
+      WHERE id = $20 AND is_deleted = FALSE
       RETURNING *
     `;
 
     const params = [
-      name, slug, short_description, full_description, JSON.stringify(specifications),
+      name, slug, sub_heading, introduction, JSON.stringify(content ?? ''), status || 'enabled', hero_image, short_description, full_description, JSON.stringify(specifications || {}),
       applications, benefits, features, thumbnail_media_id, hero_media_id,
       brochure_media_id, meta_title, meta_description, meta_keywords,
       id

@@ -47,7 +47,7 @@ export default function PreviousProjectsSection() {
     <section className="relative w-full bg-black py-24">
       <div className="mx-auto max-w-[1720px] px-6 sm:px-8 lg:px-12">
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-[760px]">
+          <div className="max-w-190">
             <h2 className="mt-4 text-[40px] font-[550] leading-[1.05] text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Our Previous Projects
             </h2>
@@ -103,7 +103,7 @@ export default function PreviousProjectsSection() {
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#01030A]/90 via-[#01030A]/20 to-transparent" />
+                      <div className="absolute inset-0 bg-linear-to-t from-[#01030A]/90 via-[#01030A]/20 to-transparent" />
                     </div>
                     <div className="p-6">
                       <h3 className="text-[22px] font-semibold text-white">{project.title}</h3>
@@ -111,9 +111,9 @@ export default function PreviousProjectsSection() {
                         <p className="line-clamp-2 text-[15px] leading-7 text-[#C8D0D9]">
                           {project.short_description || 'View project details.'}
                         </p>
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[#01030A] to-transparent" />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-[#01030A] to-transparent" />
                       </div>
-                      <div className="mt-6 inline-flex items-center gap-2 text-[15px] font-semibold text-[#2EA7FF]">
+                      <div className="section-eyebrow mt-6 inline-flex items-center gap-2">
                         View More
                         <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                       </div>
