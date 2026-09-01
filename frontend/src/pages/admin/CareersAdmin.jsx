@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import api from '../../services/api';
+import { Download, Plus, Edit, RefreshCw, Trash2 } from 'lucide-react';
+import api, { downloadCareerResume } from '../../services/api';
 
 function emptyForm() {
   return {
@@ -23,6 +23,22 @@ export default function CareersAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [applications, setApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const loadApplications = async () => {
+    try {
+      setApplicationsLoading(true);
+      const res = await api.get('/careers/applications');
+      const payload = Array.isArray(res) ? res : (res?.data ?? []);
+      setApplications(payload);
+    } catch (err) {
+      setError(err.message || 'Unable to load applications.');
+    } finally {
+      setApplicationsLoading(false);
+    }
+  };
 
   const load = async () => {
     try {
@@ -39,7 +55,39 @@ export default function CareersAdmin() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    loadApplications();
+  }, []);
+
+  const handleDownload = async (application) => {
+    try {
+      setDownloadingId(application.id);
+      const blob = await downloadCareerResume(application.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = application.resume_original_name || 'resume';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || 'Unable to download resume.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleDeleteApplication = async (id) => {
+    if (!confirm('Are you sure you want to delete this application?')) return;
+    try {
+      await api.delete(`/careers/applications/${id}`);
+      setApplications((current) => current.filter((application) => application.id !== id));
+    } catch (err) {
+      setError(err.message || 'Unable to delete application.');
+    }
+  };
 
   const handleChange = (k, v) => setForm((s) => ({ ...s, [k]: v }));
 
@@ -170,6 +218,45 @@ export default function CareersAdmin() {
                     <button type="button" onClick={()=>toggleStatus(job)} className="rounded-md bg-slate-700 px-3 py-1 text-sm text-white" title={job.status === 'Open' ? 'Disable career' : 'Enable career'}>{job.status === 'Open' ? 'Disable' : 'Enable'}</button>
                     <button type="button" onClick={()=>handleEdit(job)} className="rounded-md bg-slate-700 px-3 py-1 text-sm text-white" title="Edit career"><Edit className="h-4 w-4"/></button>
                     <button type="button" onClick={()=>handleDelete(job.id)} className="rounded-md bg-rose-600 px-3 py-1 text-sm text-white" title="Delete career"><Trash2 className="h-4 w-4"/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-8 flex items-center justify-between gap-3">
+            <h3 className="text-sm font-bold text-slate-200">Responses ({applications.length})</h3>
+            <button
+              type="button"
+              onClick={loadApplications}
+              disabled={applicationsLoading}
+              className="inline-flex items-center gap-2 rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${applicationsLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+          {applicationsLoading ? (
+            <div className="rounded-md border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">Loading responses...</div>
+          ) : applications.length === 0 ? (
+            <div className="rounded-md border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">No applications received yet.</div>
+          ) : (
+            <div className="space-y-3">
+              {applications.map((application) => (
+                <div key={application.id} className="flex flex-col gap-4 rounded-md border border-slate-800 bg-slate-950 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="break-words font-semibold text-slate-100">{application.full_name}</div>
+                    <div className="mt-1 break-words text-sm text-slate-300">Applied for: {application.job_title}</div>
+                    <div className="mt-1 text-sm text-slate-400">Applied on: {new Date(application.created_at).toLocaleString()}</div>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <button type="button" onClick={() => handleDownload(application)} disabled={downloadingId === application.id} className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                      <Download className="h-4 w-4" />
+                      {downloadingId === application.id ? 'Downloading...' : 'Download Resume'}
+                    </button>
+                    <button type="button" onClick={() => handleDeleteApplication(application.id)} className="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}

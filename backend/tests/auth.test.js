@@ -8,7 +8,7 @@ import db from '../config/db.js';
 const API_URL = 'http://localhost:5000/api/v1';
 
 describe('Authentication & Security Integration Tests', () => {
-  let adminEmail = 'admin@ervision.com';
+  let adminEmail = 'admin@erv.com';
   let adminPassword = 'AdminPassword123!';
   let csrfToken = '';
   let csrfCookie = '';

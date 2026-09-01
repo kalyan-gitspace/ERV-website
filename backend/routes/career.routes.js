@@ -9,6 +9,9 @@ const router = Router();
 router.get('/', careerController.getAll);
 router.get('/search', careerController.search);
 router.post('/:id/apply', resumeUpload.single('resume'), careerController.apply);
+router.get('/applications', protect, restrictTo('superadmin', 'editor'), careerController.getApplications);
+router.get('/applications/:id/resume', protect, restrictTo('superadmin', 'editor'), careerController.downloadResume);
+router.delete('/applications/:id', protect, restrictTo('superadmin'), careerController.deleteApplication);
 router.get('/:id', careerController.getById);
 
 // Admin-only protected routes

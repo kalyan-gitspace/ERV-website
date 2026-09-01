@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Linkedin, Instagram, Facebook, CheckCircle, X } from 'lucide-react';
+import { Linkedin } from 'lucide-react';
 import api, { fetchSettings } from '../../services/api';
 import { clearSettingsCache } from '../../services/api';
 
@@ -7,6 +7,7 @@ const KEYS = {
   linkedin: 'social_linkedin',
   instagram: 'social_instagram',
   facebook: 'social_facebook',
+  youtube: 'social_youtube',
 };
 
 const isValidUrl = (value) => {
@@ -19,11 +20,21 @@ const isValidUrl = (value) => {
   }
 };
 
+const isValidYouTubeUrl = (value) => {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return ['youtube.com', 'www.youtube.com', 'youtu.be', 'www.youtu.be'].includes(url.hostname.toLowerCase());
+  } catch (e) {
+    return false;
+  }
+};
+
 export function SocialMediaAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [values, setValues] = useState({ linkedin: '', instagram: '', facebook: '' });
-  const [errors, setErrors] = useState({ linkedin: '', instagram: '', facebook: '' });
+  const [values, setValues] = useState({ linkedin: '', instagram: '', facebook: '', youtube: '' });
+  const [errors, setErrors] = useState({ linkedin: '', instagram: '', facebook: '', youtube: '' });
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -37,6 +48,7 @@ export function SocialMediaAdmin() {
           linkedin: settings?.[KEYS.linkedin] || '',
           instagram: settings?.[KEYS.instagram] || '',
           facebook: settings?.[KEYS.facebook] || '',
+          youtube: settings?.[KEYS.youtube] || '',
         });
       } catch (err) {
         console.error('[social-admin] failed to load settings', err);
@@ -60,6 +72,9 @@ export function SocialMediaAdmin() {
     Object.entries(values).forEach(([k, v]) => {
       if (v && !isValidUrl(v)) nextErrors[k] = 'Enter a valid https:// URL or leave empty.';
     });
+    if (values.youtube && !isValidYouTubeUrl(values.youtube)) {
+      nextErrors.youtube = 'Enter a valid YouTube URL or leave empty.';
+    }
 
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
@@ -72,12 +87,20 @@ export function SocialMediaAdmin() {
         api.put(`/settings/${KEYS.linkedin}`, { value: values.linkedin || '' }),
         api.put(`/settings/${KEYS.instagram}`, { value: values.instagram || '' }),
         api.put(`/settings/${KEYS.facebook}`, { value: values.facebook || '' }),
+        api.put(`/settings/${KEYS.youtube}`, { value: values.youtube || '' }),
       ]);
       clearSettingsCache();
+      const savedSettings = await fetchSettings();
+      setValues({
+        linkedin: savedSettings?.[KEYS.linkedin] || '',
+        instagram: savedSettings?.[KEYS.instagram] || '',
+        facebook: savedSettings?.[KEYS.facebook] || '',
+        youtube: savedSettings?.[KEYS.youtube] || '',
+      });
       setMessage('Social media links saved.');
     } catch (err) {
       console.error('[social-admin] save failed', err);
-      setMessage('Save failed. See console for details.');
+      setMessage(err.message || 'Unable to save social media links.');
     } finally {
       setSaving(false);
     }
@@ -127,11 +150,23 @@ export function SocialMediaAdmin() {
           {errors.facebook && <div className="mt-1 text-xs text-rose-400">{errors.facebook}</div>}
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-slate-300">YouTube URL</label>
+          <input
+            type="url"
+            value={values.youtube}
+            onChange={(e) => handleChange('youtube', e.target.value)}
+            placeholder="https://www.youtube.com/@your-channel"
+            className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm text-slate-100"
+          />
+          {errors.youtube && <div className="mt-1 text-xs text-rose-400">{errors.youtube}</div>}
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500"
+            className="cursor-pointer rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>

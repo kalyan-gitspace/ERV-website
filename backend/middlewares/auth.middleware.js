@@ -57,3 +57,19 @@ export function restrictTo(...roles) {
   };
 }
 
+export function protectEmployee(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.error(401, 'Employee authentication required.');
+  const decoded = authService.verifyAccessToken(authHeader.slice(7));
+  if (!decoded || decoded.type !== 'employee') return res.error(401, 'Invalid employee session.');
+  req.employee = decoded;
+  next();
+}
+
+export function protectAdmin(req, res, next) {
+  protect(req, res, () => {
+    if (req.admin?.type === 'employee') return res.error(403, 'Employees cannot access administrator resources.');
+    next();
+  });
+}
+

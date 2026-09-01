@@ -55,6 +55,14 @@ export const resolveImageUrl = (value) => {
 };
 
 export const normalizeImageUrls = (value) => {
+  if (typeof Blob !== 'undefined' && value instanceof Blob) {
+    return value;
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return value;
+  }
+
   if (Array.isArray(value)) {
     return value.map((item) => normalizeImageUrls(item));
   }
@@ -82,8 +90,9 @@ const ensureCsrfToken = async (config) => {
   let csrfToken = getCsrfTokenFromCookie();
   if (!csrfToken) {
     try {
-      await axios.get(`${api.defaults.baseURL}/health`, { withCredentials: true });
+      const csrfResponse = await axios.get(`${api.defaults.baseURL}/csrf-token`, { withCredentials: true });
       csrfToken = getCsrfTokenFromCookie();
+      csrfToken = csrfToken || csrfResponse.data?.data?.token;
     } catch (error) {
       console.warn('[api] unable to refresh CSRF token before request', error);
     }
@@ -137,6 +146,10 @@ export const fetchSettings = async () => {
 };
 
 export const clearSettingsCache = () => { _settingsCache = null; _settingsPromise = null; };
+
+export const downloadCareerResume = async (applicationId) => (
+  api.get(`/careers/applications/${applicationId}/resume`, { responseType: 'blob' })
+);
 
 // Request Interceptor
 api.interceptors.request.use(
@@ -195,15 +208,18 @@ api.interceptors.response.use(
     const isAuthRoute =
       originalRequest.url.includes('/auth/login') ||
       originalRequest.url.includes('/auth/refresh') ||
-      originalRequest.url.includes('/auth/logout');
+      originalRequest.url.includes('/auth/logout') ||
+      originalRequest.url.includes('/employees/login') ||
+      originalRequest.url.includes('/employees/me');
 
     if (responseStatus === 403 && !originalRequest._retryCsrf && ['POST', 'PUT', 'PATCH', 'DELETE'].includes((originalRequest.method || '').toUpperCase())) {
       originalRequest._retryCsrf = true;
       try {
-        await axios.get(`${api.defaults.baseURL}/health`, { withCredentials: true });
+        const csrfResponse = await axios.get(`${api.defaults.baseURL}/csrf-token`, { withCredentials: true });
         const csrfToken = getCookie('csrf_token') || getCsrfTokenFromCookie();
-        if (csrfToken) {
-          originalRequest.headers['X-CSRF-Token'] = csrfToken;
+        const requestToken = csrfToken || csrfResponse.data?.data?.token;
+        if (requestToken) {
+          originalRequest.headers['X-CSRF-Token'] = requestToken;
           return api(originalRequest);
         }
       } catch (csrfError) {
@@ -278,8 +294,19 @@ api.interceptors.response.use(
       console.log('[api] response', originalRequest?.method?.toUpperCase(), originalRequest?.url, responseStatus, responseData);
     }
 
+    // Blob requests carry JSON error bodies as blobs, so decode them before exposing the error.
+    let responseMessage = responseData?.message;
+    if (!responseMessage && typeof Blob !== 'undefined' && responseData instanceof Blob) {
+      try {
+        const parsedResponse = JSON.parse(await responseData.text());
+        responseMessage = parsedResponse?.message;
+      } catch (parseError) {
+        responseMessage = null;
+      }
+    }
+
     // Standardize error object structure for components
-    const customError = new Error(responseData?.message || error.message || 'An error occurred.');
+    const customError = new Error(responseMessage || error.message || 'An error occurred.');
     customError.status = responseStatus || 500;
     customError.errors = responseData?.errors || null;
     customError.requestId = requestId;

@@ -33,8 +33,19 @@ app.use(requestIdMiddleware);
 app.use(helmet());
 
 // 3. CORS Configuration
+const configuredFrontendOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || configuredFrontendOrigins.includes(origin) || /^http:\/\/localhost:517[3-9]$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS origin not allowed: ${origin}`));
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -44,6 +55,9 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
+app.use('/uploads/applications', (req, res) => {
+  res.status(404).json({ success: false, message: 'File not found.' });
+});
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   setHeaders: (res) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -89,6 +103,9 @@ app.use((req, res, next) => {
 
 // 9. Health Check — no CSRF needed
 app.get('/api/v1/health', healthController.checkHealth);
+app.get('/api/v1/csrf-token', (req, res) => {
+  res.json({ success: true, data: { token: req.csrfToken || req.cookies?.csrf_token || null } });
+});
 
 // 10. Swagger/OpenAPI Documentation — no CSRF needed
 app.get('/api/docs', swaggerController.getSwaggerHtml);
@@ -121,16 +138,55 @@ async function ensureApplicationTable() {
         total_experience VARCHAR(100) NOT NULL,
         message TEXT NOT NULL,
         resume_path VARCHAR(2048) NOT NULL,
+        resume_original_name VARCHAR(255),
+        resume_mime_type VARCHAR(255),
+        resume_size INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+    await db.query(`
+      ALTER TABLE applications
+        ADD COLUMN IF NOT EXISTS resume_original_name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS resume_mime_type VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS resume_size INTEGER
     `);
   } catch (error) {
     logger.error('Error creating applications table:', error);
   }
 }
 
+async function ensureEmployeeTables() {
+  try {
+    await db.query(`CREATE TABLE IF NOT EXISTS employees (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), employee_id VARCHAR(100) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, full_name VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE, phone VARCHAR(50), role VARCHAR(150), department VARCHAR(150), joining_date DATE, profile_picture VARCHAR(2048), id_proof_path VARCHAR(2048), id_proof_name VARCHAR(255), is_active BOOLEAN DEFAULT TRUE, status VARCHAR(20) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Resigned')), is_deleted BOOLEAN DEFAULT FALSE, deleted_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await db.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'Active'`);
+    await db.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS gender VARCHAR(20)`);
+    await db.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS basic_salary NUMERIC(12, 2)`);
+    await db.query(`ALTER TABLE employees DROP CONSTRAINT IF EXISTS employees_gender_check`);
+    await db.query(`ALTER TABLE employees ADD CONSTRAINT employees_gender_check CHECK (gender IS NULL OR gender IN ('Male', 'Female'))`);
+    await db.query(`CREATE TABLE IF NOT EXISTS employee_id_registry (employee_id VARCHAR(100) PRIMARY KEY, sequence_number INTEGER UNIQUE NOT NULL, assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await db.query(`CREATE SEQUENCE IF NOT EXISTS employee_id_sequence START WITH 1`);
+    await db.query(`INSERT INTO employee_id_registry (employee_id, sequence_number) SELECT employee_id, CAST(SUBSTRING(employee_id FROM 4) AS INTEGER) FROM employees WHERE employee_id ~ '^ERV[0-9]+$' ON CONFLICT DO NOTHING`);
+    await db.query(`SELECT setval('employee_id_sequence', GREATEST(COALESCE((SELECT MAX(sequence_number) FROM employee_id_registry), 0) + 1, 1), false)`);
+    await db.query(`CREATE TABLE IF NOT EXISTS employee_attendance (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE, attendance_date DATE NOT NULL, status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent')), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (employee_id, attendance_date))`);
+    await db.query(`ALTER TABLE employee_attendance DROP CONSTRAINT IF EXISTS employee_attendance_status_check`);
+    await db.query(`ALTER TABLE employee_attendance ADD CONSTRAINT employee_attendance_status_check CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work'))`);
+  } catch (error) { logger.error('Error creating employee tables:', error); }
+}
+
 async function bootstrapAdmin() {
   try {
+    await db.query(`
+      UPDATE admins
+      SET email = 'admin@erv.com', updated_at = CURRENT_TIMESTAMP
+      WHERE email = 'admin@ervision.com'
+        AND NOT EXISTS (SELECT 1 FROM admins WHERE email = 'admin@erv.com')
+    `);
+    await db.query(`
+      UPDATE admins
+      SET is_active = FALSE, is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE email = 'admin@ervision.com'
+        AND EXISTS (SELECT 1 FROM admins WHERE email = 'admin@erv.com')
+    `);
     const result = await db.query('SELECT COUNT(*) FROM admins WHERE is_deleted = FALSE');
     const count = parseInt(result.rows[0].count, 10);
     
@@ -284,6 +340,7 @@ async function ensureLegacyProducts() {
 app.listen(PORT, async () => {
   mediaService.initStorage();
   await ensureApplicationTable();
+  await ensureEmployeeTables();
   await ensureClientsTable();
   await ensureProductCmsColumns();
   await ensureLegacyProducts();

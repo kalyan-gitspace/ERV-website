@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Linkedin, Mail, MapPin, Instagram, Facebook } from 'lucide-react';
+import { Linkedin, Mail, MapPin, Instagram, Facebook, Youtube } from 'lucide-react';
 import Logo from './Logo';
 import api, { fetchSettings } from '../services/api';
 
@@ -26,10 +26,11 @@ const SOCIAL_KEYS = {
   linkedin: 'social_linkedin',
   instagram: 'social_instagram',
   facebook: 'social_facebook',
+  youtube: 'social_youtube',
 };
 
 export function Footer() {
-  const [socialLinks, setSocialLinks] = useState({ linkedin: '', instagram: '', facebook: '' });
+  const [socialLinks, setSocialLinks] = useState({ linkedin: '', instagram: '', facebook: '', youtube: '' });
 
   useEffect(() => {
     let mounted = true;
@@ -41,6 +42,7 @@ export function Footer() {
           linkedin: settings?.[SOCIAL_KEYS.linkedin] || '',
           instagram: settings?.[SOCIAL_KEYS.instagram] || '',
           facebook: settings?.[SOCIAL_KEYS.facebook] || '',
+          youtube: settings?.[SOCIAL_KEYS.youtube] || '',
         });
       } catch (err) {
         // silently ignore
@@ -54,7 +56,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_.8fr]">
         <div className="space-y-8">
           <Link to="/" aria-label="ERV home" className="inline-flex">
-            <Logo size="lg" />
+            <Logo variant="footer" size="footer" alt="Edge Route Vision Pvt. Ltd." />
           </Link>
           <div className="grid gap-6 text-sm text-slate-400 sm:grid-cols-2">
             <p className="max-w-sm leading-7">
@@ -149,6 +151,23 @@ export function Footer() {
             ) : (
               <div className="icon-button opacity-40" aria-hidden>
                 <Facebook className="h-4 w-4" />
+              </div>
+            )}
+
+            {socialLinks.youtube ? (
+              <a
+                href={socialLinks.youtube}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="icon-button"
+                aria-label="YouTube"
+                title="YouTube"
+              >
+                <Youtube className="h-4 w-4" />
+              </a>
+            ) : (
+              <div className="icon-button opacity-40" aria-hidden>
+                <Youtube className="h-4 w-4" />
               </div>
             )}
           </div>

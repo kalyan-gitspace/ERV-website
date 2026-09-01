@@ -149,7 +149,10 @@ export const careerRepository = {
       noticePeriod,
       totalExperience,
       message,
-      resumePath
+      resumePath,
+      resumeOriginalName,
+      resumeMimeType,
+      resumeSize
     } = applicationData;
 
     const query = `
@@ -161,9 +164,13 @@ export const careerRepository = {
         notice_period,
         total_experience,
         message,
-        resume_path
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *
+        resume_path,
+        resume_original_name,
+        resume_mime_type,
+        resume_size
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id, job_id, full_name, email, phone, notice_period, total_experience, message,
+                resume_original_name, resume_mime_type, resume_size, created_at
     `;
 
     const result = await db.query(query, [
@@ -174,10 +181,42 @@ export const careerRepository = {
       noticePeriod,
       totalExperience,
       message,
-      resumePath
+      resumePath,
+      resumeOriginalName,
+      resumeMimeType,
+      resumeSize
     ]);
 
     return result.rows[0];
+  },
+
+  async findApplications() {
+    const result = await db.query(`
+      SELECT applications.id, applications.job_id, applications.full_name,
+             applications.email, applications.phone, applications.notice_period,
+             applications.total_experience, applications.message,
+             applications.resume_original_name, applications.resume_mime_type,
+             applications.resume_size, applications.created_at, careers.title AS job_title
+      FROM applications
+      INNER JOIN careers ON careers.id = applications.job_id
+      ORDER BY applications.created_at DESC
+    `);
+    return result.rows;
+  },
+
+  async findApplicationById(id) {
+    const result = await db.query(`
+      SELECT applications.*, careers.title AS job_title
+      FROM applications
+      INNER JOIN careers ON careers.id = applications.job_id
+      WHERE applications.id = $1
+    `, [id]);
+    return result.rows[0] || null;
+  },
+
+  async deleteApplication(id) {
+    const result = await db.query('DELETE FROM applications WHERE id = $1 RETURNING id, resume_path', [id]);
+    return result.rows[0] || null;
   },
 
   /**

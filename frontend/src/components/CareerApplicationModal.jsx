@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../services/api';
 
-const ACCEPTED_FILE_TYPES = '.pdf,.doc,.docx,.rtf,.odt,.txt';
+const ACCEPTED_FILE_TYPES = '.pdf,.doc,.docx';
 
 export function CareerApplicationModal({ jobId, jobTitle, onClose }) {
   const [submissionStatus, setSubmissionStatus] = useState({ success: '', error: '' });
@@ -76,7 +76,7 @@ export function CareerApplicationModal({ jobId, jobTitle, onClose }) {
             <div className="text-sm uppercase tracking-[0.3em] text-emerald-400">Apply for job</div>
             <h2 className="mt-2 text-2xl font-bold text-white">{jobTitle}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              All fields are mandatory. Resume upload must be PDF, DOC, DOCX, RTF, ODT, or TXT.
+              All fields are mandatory. Resume upload must be PDF, DOC, or DOCX.
             </p>
           </div>
 

@@ -47,7 +47,7 @@ export function Login() {
     
     try {
       await login(data.email, data.password, data.rememberMe);
-      navigate('/admin');
+      navigate('/admin', { state: { showAdminLoader: true } });
     } catch (err) {
       console.error('Login submission error:', err);
       // Grab detailed message from custom error mapping
@@ -131,7 +131,7 @@ export function Login() {
               </span>
               <input
                 type="email"
-                placeholder="admin@ervision.com"
+                placeholder="admin@erv.com"
                 className={`w-full pl-10 pr-4 py-3 bg-slate-950/80 border rounded-xl text-sm placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all ${
                   errors.email ? 'border-red-500' : 'border-slate-800'
                 }`}

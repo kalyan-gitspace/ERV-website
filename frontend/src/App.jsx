@@ -1,36 +1,58 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { EmployeeAuthProvider } from './context/EmployeeAuthContext';
 import { AuthGuard } from './components/AuthGuard';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { LoadingScreen } from './components/LoadingScreen';
+import { LoadingScreen, beginRouteLoad, finishRouteLoad, markRouteReady } from './components/LoadingScreen';
+import HomePage from './pages/public/HomePage';
+import Dashboard from './pages/admin/Dashboard';
+import EmployeeRoute from './components/EmployeeRoute';
+
+const lazyRoute = (importer) => lazy(() => {
+  const routeLoad = beginRouteLoad();
+  return importer()
+    .then((module) => {
+      markRouteReady(routeLoad);
+      return routeLoad.completion.then(() => module);
+    })
+    .catch((error) => {
+      finishRouteLoad(routeLoad);
+      throw error;
+    });
+});
 
 // ─── Public Pages (lazy loaded for performance) ──────────────────────────────
-const HomePage    = lazy(() => import('./pages/public/HomePage'));
-const AboutPage   = lazy(() => import('./pages/public/AboutPage'));
-const ProductDetail = lazy(() => import('./pages/public/ProductDetail'));
-const Search      = lazy(() => import('./pages/public/Search'));
-const GalleryPage = lazy(() => import('./pages/public/GalleryPage'));
-const Careers = lazy(() => import('./pages/public/Careers'));
-const CareerDetail = lazy(() => import('./pages/public/CareerDetail'));
-const Privacy     = lazy(() => import('./pages/public/Privacy'));
-const Terms       = lazy(() => import('./pages/public/Terms'));
-const Sitemap     = lazy(() => import('./pages/public/Sitemap'));
-const ProjectDetail = lazy(() => import('./pages/public/ProjectDetail'));
+const AboutPage   = lazyRoute(() => import('./pages/public/AboutPage'));
+const ProductDetail = lazyRoute(() => import('./pages/public/ProductDetail'));
+const Search      = lazyRoute(() => import('./pages/public/Search'));
+const GalleryPage = lazyRoute(() => import('./pages/public/GalleryPage'));
+const Careers = lazyRoute(() => import('./pages/public/Careers'));
+const CareerDetail = lazyRoute(() => import('./pages/public/CareerDetail'));
+const Privacy     = lazyRoute(() => import('./pages/public/Privacy'));
+const Terms       = lazyRoute(() => import('./pages/public/Terms'));
+const Sitemap     = lazyRoute(() => import('./pages/public/Sitemap'));
+const ProjectDetail = lazyRoute(() => import('./pages/public/ProjectDetail'));
 
 // ─── Admin Pages ──────────────────────────────────────────────────────────────
-const Login     = lazy(() => import('./pages/admin/Login'));
-const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const Login     = lazyRoute(() => import('./pages/admin/Login'));
+const EmployeeLogin = lazyRoute(() => import('./pages/employee/EmployeeLogin'));
+const EmployeeDashboard = lazyRoute(() => import('./pages/employee/EmployeeDashboard'));
 
 // ─── Error Pages ─────────────────────────────────────────────────────────────
-const ErrorPage = lazy(() => import('./pages/ErrorPage'));
+const ErrorPage = lazyRoute(() => import('./pages/ErrorPage'));
 
 function App() {
+  const [showInitialLoader, setShowInitialLoader] = useState(true);
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes>
+    <>
+      {showInitialLoader ? <LoadingScreen mode="initial" onComplete={() => setShowInitialLoader(false)} /> : (
+        <BrowserRouter>
+          <AuthProvider>
+                        <EmployeeAuthProvider>
+            <Suspense fallback={<LoadingScreen mode="route" />}>
+              <Routes>
             {/* ── PUBLIC WEBSITE (primary experience) ── */}
             <Route path="/"               element={<HomePage />} />
             <Route path="/about"          element={<AboutPage />} />
@@ -55,6 +77,8 @@ function App() {
             />
             {/* Legacy /login redirect to /admin/login */}
             <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+            <Route path="/employeelogin" element={<EmployeeLogin />} />
+            <Route path="/employee" element={<EmployeeRoute><EmployeeDashboard /></EmployeeRoute>} />
 
             <Route
               path="/admin"
@@ -70,10 +94,13 @@ function App() {
             <Route path="/403" element={<ErrorPage code={403} />} />
             <Route path="/500" element={<ErrorPage code={500} />} />
             <Route path="*"    element={<ErrorPage code={404} />} />
-          </Routes>
-        </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
+              </Routes>
+            </Suspense>
+            </EmployeeAuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      )}
+    </>
   );
 }
 

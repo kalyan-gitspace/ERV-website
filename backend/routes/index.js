@@ -10,6 +10,7 @@ import contactRoutes from './contact.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import notificationRoutes from './notification.routes.js';
 import projectsRoutes from './projects.routes.js';
+import employeeRoutes from './employee.routes.js';
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use('/contacts', contactRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/projects', projectsRoutes);
+router.use('/employees', employeeRoutes);
 
 export default router;

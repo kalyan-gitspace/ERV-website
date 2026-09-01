@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { careerService } from '../services/career.service.js';
 import { dashboardService } from '../services/dashboard.service.js';
 
@@ -227,6 +228,41 @@ export const careerController = {
         timestamp: new Date().toISOString(),
         requestId: req.requestId
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getApplications(req, res, next) {
+    try {
+      const applications = await careerService.getApplications();
+      return res.ok(applications);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async downloadResume(req, res, next) {
+    try {
+      const result = await careerService.getApplicationResume(req.params.id);
+      if (!result || !fs.existsSync(result.filePath)) {
+        return res.error(404, 'Resume file is no longer available.');
+      }
+      res.setHeader('Content-Type', result.application.resume_mime_type || 'application/octet-stream');
+      return res.download(
+        result.filePath,
+        result.application.resume_original_name || 'candidate-resume'
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async deleteApplication(req, res, next) {
+    try {
+      const deleted = await careerService.deleteApplication(req.params.id);
+      if (!deleted) return res.error(404, 'Application not found.');
+      return res.ok(null, 'Application deleted successfully.');
     } catch (error) {
       next(error);
     }

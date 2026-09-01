@@ -177,6 +177,10 @@ export const authService = {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   },
 
+  generateEmployeeAccessToken(employee) {
+    return jwt.sign({ sub: employee.id, employeeId: employee.employee_id, name: employee.full_name, role: employee.role, type: 'employee' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  },
+
   /**
    * Generate secure cryptographically strong random Refresh Token string
    */

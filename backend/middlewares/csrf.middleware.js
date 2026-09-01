@@ -10,6 +10,7 @@ export function setCsrfToken(req, res, next) {
   // If no cookie exists, generate a new token
   if (!req.cookies?.[CSRF_COOKIE_NAME]) {
     const csrfToken = crypto.randomBytes(32).toString('hex');
+    req.csrfToken = csrfToken;
     res.cookie(CSRF_COOKIE_NAME, csrfToken, {
       secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
       sameSite: process.env.COOKIE_SAMESITE || 'lax',
@@ -17,6 +18,7 @@ export function setCsrfToken(req, res, next) {
       // HttpOnly is false so the frontend can read the cookie to populate the header
     });
   }
+  if (!req.csrfToken) req.csrfToken = req.cookies?.[CSRF_COOKIE_NAME] || null;
   next();
 }
 

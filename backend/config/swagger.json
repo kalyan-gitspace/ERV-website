@@ -51,7 +51,7 @@
                 "type": "object",
                 "required": ["email", "password"],
                 "properties": {
-                  "email": { "type": "string", "format": "email", "example": "admin@ervision.com" },
+                  "email": { "type": "string", "format": "email", "example": "admin@erv.com" },
                   "password": { "type": "string", "format": "password", "example": "AdminPassword123!" },
                   "rememberMe": { "type": "boolean", "example": true }
                 }

@@ -70,6 +70,47 @@ CREATE TABLE admins (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE employees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    employee_id VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    gender VARCHAR(20) CHECK (gender IN ('Male', 'Female')),
+    basic_salary NUMERIC(12, 2) CHECK (basic_salary IS NULL OR basic_salary >= 0),
+    email VARCHAR(255) UNIQUE,
+    phone VARCHAR(50),
+    role VARCHAR(150),
+    department VARCHAR(150),
+    joining_date DATE,
+    profile_picture VARCHAR(2048),
+    id_proof_path VARCHAR(2048),
+    id_proof_name VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    status VARCHAR(20) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Resigned')),
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE employee_id_registry (
+    employee_id VARCHAR(100) PRIMARY KEY,
+    sequence_number INTEGER UNIQUE NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE SEQUENCE employee_id_sequence START WITH 1;
+
+CREATE TABLE employee_attendance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    attendance_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (employee_id, attendance_date)
+);
+
 -- Trigger for admins
 CREATE TRIGGER update_admins_updated_at
 BEFORE UPDATE ON admins
@@ -253,6 +294,9 @@ CREATE TABLE applications (
     total_experience VARCHAR(100) NOT NULL,
     message TEXT NOT NULL,
     resume_path VARCHAR(2048) NOT NULL,
+    resume_original_name VARCHAR(255),
+    resume_mime_type VARCHAR(255),
+    resume_size INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -1,19 +1,38 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { LogOut, Lock, User, Shield, AlertCircle, CheckCircle, RefreshCw, FolderKanban } from 'lucide-react';
+import { LogOut, Lock, User, AlertCircle, CheckCircle, RefreshCw, Images, Package, BriefcaseBusiness, Users, Share2, Settings } from 'lucide-react';
+import { UserRoundCog } from 'lucide-react';
+import EmployeesAdmin from './EmployeesAdmin';
 import PreviousProjectsAdmin from './PreviousProjectsAdmin';
 import GalleryAdmin from './GalleryAdmin';
 import CareersAdmin from './CareersAdmin';
 import ClientsAdmin from './ClientsAdmin';
 import SocialMediaAdmin from './SocialMediaAdmin';
 import ProductsAdmin from './ProductsAdmin';
+import { LoadingScreen } from '../../components/LoadingScreen';
 
 export function Dashboard() {
   const { user, logout, changePassword } = useAuth();
+  const location = useLocation();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState({ success: '', error: '', loading: false });
+  const [activeSection, setActiveSection] = useState(null);
+  const [showInitialLoader, setShowInitialLoader] = useState(Boolean(location.state?.showAdminLoader));
+  const [pendingSection, setPendingSection] = useState(null);
+
+  const sections = [
+    { id: 'gallery', label: 'Gallery', icon: Images, component: GalleryAdmin },
+    { id: 'products', label: 'Products', icon: Package, component: ProductsAdmin },
+    { id: 'projects', label: 'Previous Projects', icon: BriefcaseBusiness, component: PreviousProjectsAdmin },
+    { id: 'careers', label: 'Careers', icon: BriefcaseBusiness, component: CareersAdmin },
+    { id: 'clients', label: 'Clients', icon: Users, component: ClientsAdmin },
+    { id: 'social', label: 'Social Media', icon: Share2, component: SocialMediaAdmin },
+    { id: 'employees', label: 'Employees', icon: UserRoundCog, component: EmployeesAdmin },
+    { id: 'settings', label: 'Settings', icon: Settings, component: null },
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -49,157 +68,75 @@ export function Dashboard() {
     }
   };
 
+  const activeConfig = sections.find((section) => section.id === activeSection);
+  const ActiveComponent = activeConfig?.component;
+
+  const beginSectionTransition = (sectionId) => {
+    if (pendingSection || sectionId === activeSection) return;
+    setPendingSection(sectionId);
+  };
+
+  const completeSectionTransition = () => {
+    setActiveSection(pendingSection);
+    setPendingSection(null);
+  };
+
+  if (showInitialLoader) {
+    return <LoadingScreen mode="admin-initial" onComplete={() => setShowInitialLoader(false)} />;
+  }
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black p-6 font-sans text-slate-100">
+    <div className="relative min-h-screen overflow-hidden bg-black p-4 font-sans text-slate-100 sm:p-6">
       <div className="absolute left-10 top-10 h-96 w-96 rounded-full bg-indigo-600/10 blur-3xl" />
       <div className="absolute bottom-10 right-10 h-96 w-96 rounded-full bg-cyan-600/10 blur-3xl" />
-
       <div className="relative mx-auto max-w-6xl space-y-6">
-        <header className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
+        <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600">
-              <Shield className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-100">Edge Route Vision</h1>
-              <p className="text-xs font-light text-slate-400">Secure Admin Panel</p>
-            </div>
+            <img
+              src="/logo.png"
+              alt="Edge Route Vision Pvt. Ltd."
+              className="h-16 w-16 shrink-0 object-contain"
+              draggable="false"
+            />
+            <div><h1 className="text-xl font-bold tracking-tight text-slate-100">Edge Route Vision</h1><p className="text-xs font-light text-slate-400">Secure Admin Panel</p></div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 active:scale-[0.98]"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block"><div className="text-sm font-semibold text-slate-100">{user?.fullName}</div><div className="text-xs text-slate-400">{user?.email}</div></div>
+            <button type="button" onClick={handleLogout} className="flex cursor-pointer items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500"><LogOut className="h-4 w-4" />Sign Out</button>
+          </div>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <section className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl md:col-span-1">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-700 bg-slate-800">
-                  <User className="h-6 w-6 text-slate-300" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-100">{user?.fullName}</h3>
-                  <span className="mt-0.5 inline-block rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
-                    {user?.roleName}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 border-t border-slate-800 pt-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-light text-slate-400">Email Address:</span>
-                  <span className="font-mono text-slate-200">{user?.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-light text-slate-400">Account status:</span>
-                  <span className="flex items-center gap-1 font-medium text-emerald-400">
-                    <span className="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-400" />
-                    Active
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-[11px] leading-normal text-slate-500">
-              Session is actively monitored. Inactivity logs are transmitted back to system security.
+        {!activeSection ? (
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl backdrop-blur-xl">
+            <div className="mb-5 flex items-center gap-3"><User className="h-5 w-5 text-indigo-400" /><div><h2 className="text-lg font-bold text-slate-100">Admin Dashboard</h2><p className="text-xs text-slate-400">Select a section to manage website content.</p></div></div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {sections.map(({ id, label, icon: Icon }) => (
+                <button key={id} type="button" onClick={() => beginSectionTransition(id)} disabled={Boolean(pendingSection)} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-left text-sm font-semibold text-slate-200 transition hover:border-indigo-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"><Icon className="h-5 w-5 text-cyan-400" />{label}</button>
+              ))}
             </div>
           </section>
-
-          <div className="grid gap-6 xl:col-span-2 xl:grid-cols-[1.4fr_0.6fr]">
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-100">
-                <Lock className="h-5 w-5 text-indigo-400" />
-                Change Credentials & Password
-              </h2>
-              <p className="mt-2 text-xs font-light text-slate-400">
-                Changing your password automatically revokes session logins on all other active devices.
-              </p>
-
-              <form onSubmit={handlePasswordChange} className="space-y-4 pt-2">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm placeholder-slate-700 transition-colors focus:border-indigo-500 focus:outline-none"
-                    />
+        ) : (
+          <section>
+            <button type="button" onClick={() => setActiveSection(null)} className="mb-3 cursor-pointer text-sm font-semibold text-cyan-300 hover:text-cyan-200">&larr; Back to Dashboard</button>
+            {activeSection === 'settings' ? (
+              <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-100"><Lock className="h-5 w-5 text-indigo-400" />Settings</h2>
+                <p className="mt-2 text-xs font-light text-slate-400">Changing your password automatically revokes session logins on other active devices.</p>
+                <form onSubmit={handlePasswordChange} className="mt-4 max-w-2xl space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Current Password<input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm normal-case outline-none focus:border-indigo-500" /></label>
+                    <label className="space-y-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">New Password<input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm normal-case outline-none focus:border-indigo-500" /></label>
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm placeholder-slate-700 transition-colors focus:border-indigo-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {passwordStatus.error && (
-                  <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
-                    <AlertCircle className="h-4 w-4" />
-                    {passwordStatus.error}
-                  </div>
-                )}
-
-                {passwordStatus.success && (
-                  <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                    <CheckCircle className="h-4 w-4" />
-                    {passwordStatus.success}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={passwordStatus.loading}
-                  className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-indigo-500 disabled:bg-indigo-800 active:scale-[0.98]"
-                >
-                  {passwordStatus.loading ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      Updating credentials...
-                    </>
-                  ) : (
-                    'Change Password'
-                  )}
-                </button>
-              </form>
-            </section>
-
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-100">
-                <FolderKanban className="h-5 w-5 text-cyan-400" />
-                Modules
-              </h2>
-              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
-                Previous Projects module is now available below the homepage content and inside the admin panel.
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <GalleryAdmin />
-        <ProductsAdmin />
-        <PreviousProjectsAdmin />
-        <CareersAdmin />
-        <ClientsAdmin />
-        <SocialMediaAdmin />
+                  {passwordStatus.error && <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300"><AlertCircle className="h-4 w-4" />{passwordStatus.error}</div>}
+                  {passwordStatus.success && <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-300"><CheckCircle className="h-4 w-4" />{passwordStatus.success}</div>}
+                  <button type="submit" disabled={passwordStatus.loading} className="flex cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">{passwordStatus.loading && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}{passwordStatus.loading ? 'Updating credentials...' : 'Change Password'}</button>
+                </form>
+              </section>
+            ) : ActiveComponent ? <ActiveComponent /> : null}
+          </section>
+        )}
       </div>
+      {pendingSection && <LoadingScreen mode="admin-route" onComplete={completeSectionTransition} />}
     </div>
   );
 }

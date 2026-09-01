@@ -34,19 +34,13 @@ const resumeFileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
     'application/pdf',
     'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/rtf',
-    'text/plain',
-    'application/vnd.oasis.opendocument.text'
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   ];
 
-  const fileName = (file.originalname || '').toLowerCase();
-  const isAllowedExtension = ['.pdf', '.doc', '.docx', '.rtf', '.odt', '.txt'].some((ext) => fileName.endsWith(ext));
-
-  if (allowedMimeTypes.includes(file.mimetype) || isAllowedExtension) {
+  if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Unsupported resume file type. Please upload a PDF, DOC, DOCX, RTF, ODT, or TXT file.'), false);
+    cb(new Error('Unsupported resume file type. Please upload a PDF, DOC, or DOCX file.'), false);
   }
 };
 
@@ -70,4 +64,32 @@ export const resumeUpload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024 // 5 Megabytes
   }
+});
+
+const employeeFileFilter = (req, file, cb) => {
+  const profileMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/webp'
+  ];
+  const documentMimeTypes = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/octet-stream'
+  ];
+  const allowedMimeTypes = file.fieldname === 'profilePicture' ? profileMimeTypes : documentMimeTypes;
+  if (allowedMimeTypes.includes(file.mimetype)) cb(null, true);
+  else cb(new Error(file.fieldname === 'profilePicture'
+    ? 'Profile picture must be JPG, JPEG, PNG, or WEBP.'
+    : 'ID proof must be PDF, JPG, JPEG, PNG, WEBP, DOC, or DOCX.'), false);
+};
+
+export const employeeUpload = multer({
+  storage,
+  fileFilter: employeeFileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
