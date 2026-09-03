@@ -167,9 +167,10 @@ async function ensureEmployeeTables() {
     await db.query(`CREATE SEQUENCE IF NOT EXISTS employee_id_sequence START WITH 1`);
     await db.query(`INSERT INTO employee_id_registry (employee_id, sequence_number) SELECT employee_id, CAST(SUBSTRING(employee_id FROM 4) AS INTEGER) FROM employees WHERE employee_id ~ '^ERV[0-9]+$' ON CONFLICT DO NOTHING`);
     await db.query(`SELECT setval('employee_id_sequence', GREATEST(COALESCE((SELECT MAX(sequence_number) FROM employee_id_registry), 0) + 1, 1), false)`);
-    await db.query(`CREATE TABLE IF NOT EXISTS employee_attendance (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE, attendance_date DATE NOT NULL, status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent')), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (employee_id, attendance_date))`);
+    await db.query(`CREATE TABLE IF NOT EXISTS employee_attendance (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE, attendance_date DATE NOT NULL, status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent')), login_time TIME, logout_time TIME, work_hours TIME, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (employee_id, attendance_date))`);
+    await db.query(`ALTER TABLE employee_attendance ADD COLUMN IF NOT EXISTS login_time TIME, ADD COLUMN IF NOT EXISTS logout_time TIME, ADD COLUMN IF NOT EXISTS work_hours TIME`);
     await db.query(`ALTER TABLE employee_attendance DROP CONSTRAINT IF EXISTS employee_attendance_status_check`);
-    await db.query(`ALTER TABLE employee_attendance ADD CONSTRAINT employee_attendance_status_check CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work'))`);
+    await db.query(`ALTER TABLE employee_attendance ADD CONSTRAINT employee_attendance_status_check CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work', 'Festival', 'Paid Leave'))`);
   } catch (error) { logger.error('Error creating employee tables:', error); }
 }
 

@@ -105,7 +105,10 @@ CREATE TABLE employee_attendance (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
     employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
     attendance_date DATE NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work', 'Festival', 'Paid Leave')),
+    login_time TIME,
+    logout_time TIME,
+    work_hours TIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (employee_id, attendance_date)

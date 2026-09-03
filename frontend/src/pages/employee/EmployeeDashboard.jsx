@@ -6,6 +6,12 @@ import SalaryDashboard from '../../components/SalaryDashboard';
 import api, { resolveImageUrl } from '../../services/api';
 import { formatDateOnly } from '../../utils/dateOnly';
 
+const formatTime = (value) => {
+  if (!value) return 'NA';
+  const [hour, minute] = String(value).slice(0, 5).split(':').map(Number);
+  return `${String(hour % 12 || 12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
+
 export default function EmployeeDashboard() {
   const { employee, logout, setEmployee } = useEmployeeAuth();
   const [attendance, setAttendance] = useState([]);
@@ -174,6 +180,12 @@ export default function EmployeeDashboard() {
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <h2 className="text-lg font-semibold">Attendance Calendar</h2>
               <AttendanceCalendar records={attendance} joiningDate={employee?.joining_date} />
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[620px] text-left text-xs">
+                  <thead className="text-slate-400"><tr><th className="p-2">Date</th><th className="p-2">Status</th><th className="p-2">Login Time</th><th className="p-2">Logout Time</th><th className="p-2">Work Hours</th></tr></thead>
+                  <tbody>{attendance.map((record) => <tr key={record.id || record.attendance_date} className="border-t border-slate-800"><td className="p-2">{formatDateOnly(record.attendance_date)}</td><td className="p-2">{record.status === 'Halfday' ? 'Half Day' : record.status}</td><td className="p-2">{formatTime(record.login_time)}</td><td className="p-2">{formatTime(record.logout_time)}</td><td className="p-2">{record.work_hours?.slice(0, 5) || 'NA'}</td></tr>)}</tbody>
+                </table>
+              </div>
             </section>
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">

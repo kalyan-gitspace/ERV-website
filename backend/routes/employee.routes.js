@@ -22,6 +22,7 @@ router.get('/:id/attendance', async (req, res, next) => { try { res.ok(await emp
 router.get('/:id/payroll', employeeController.payroll);
 router.get('/:id/attendance/export', employeeController.exportAttendance);
 router.post('/attendance', employeeController.markAttendance);
+router.put('/attendance', employeeController.markAttendance);
 router.get('/:id/id-proof', restrictTo('superadmin'), employeeController.idProof);
 router.delete('/:id', restrictTo('superadmin'), employeeController.remove);
 export default router;

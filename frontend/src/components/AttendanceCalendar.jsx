@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dateOnly } from '../utils/dateOnly';
 
 const statusColors = {
@@ -8,10 +8,12 @@ const statusColors = {
   WFH: 'bg-blue-500',
   Halfday: 'bg-white',
   'On Site Work': 'bg-yellow-400',
-  'Paid Holiday': 'bg-orange-500'
+  'Paid Holiday': 'bg-orange-500',
+  Festival: 'bg-pink-500',
+  'Paid Leave': 'bg-purple-500'
 };
 
-export default function AttendanceCalendar({ records = [], joiningDate = '', editable = false, onSelectDate }) {
+export default function AttendanceCalendar({ records = [], joiningDate = '', editable = false, selectedDate = '', previewStatus = '', onSelectDate }) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
   const today = useMemo(() => dateOnly(new Date()), []);
@@ -35,7 +37,13 @@ export default function AttendanceCalendar({ records = [], joiningDate = '', edi
         <button type="button" onClick={() => moveMonth(-1)} className="cursor-pointer rounded bg-slate-800 p-1.5">
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <h5 className="text-sm font-semibold">{month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h5>
+        <div className="flex items-center gap-2">
+          <h5 className="text-sm font-semibold">{month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h5>
+          <label className="cursor-pointer rounded bg-slate-800 p-1.5" title="Choose month and year">
+            <CalendarDays className="h-4 w-4" />
+            <input type="month" value={`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`} onChange={(event) => { const [year, monthNumber] = event.target.value.split('-').map(Number); setMonth(new Date(year, monthNumber - 1, 1)); }} className="sr-only" />
+          </label>
+        </div>
         <button type="button" onClick={() => moveMonth(1)} className="cursor-pointer rounded bg-slate-800 p-1.5">
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -52,7 +60,7 @@ export default function AttendanceCalendar({ records = [], joiningDate = '', edi
           const weekday = new Date(month.getFullYear(), month.getMonth(), day).getDay();
           const beforeJoining = joiningDate && key < dateOnly(joiningDate);
           const futureDate = key > today;
-          const status = beforeJoining ? 'Before Joining' : futureDate ? 'Future' : weekday === 0 ? 'Paid Holiday' : recordMap[key];
+          const status = beforeJoining ? 'Before Joining' : futureDate ? 'Future' : weekday === 0 ? 'Paid Holiday' : selectedDate === key && previewStatus ? previewStatus : recordMap[key];
           const color = beforeJoining || futureDate ? 'bg-slate-800' : statusColors[status] || 'bg-slate-700';
           const isDisabled = !editable || Boolean(beforeJoining) || futureDate || weekday === 0;
 

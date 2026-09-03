@@ -3,7 +3,8 @@ import { Download, FileCheck, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import api, { resolveImageUrl } from '../../services/api';
 import AttendanceCalendar from '../../components/AttendanceCalendar';
 import SalaryDashboard from '../../components/SalaryDashboard';
-import { formatDateOnly } from '../../utils/dateOnly';
+import { dateOnly, formatDateOnly, todayDateOnly } from '../../utils/dateOnly';
+import { calculateWorkHours, nonWorkingStatuses, timesForStatus } from '../../utils/attendance';
 
 const emptyForm = {
   fullName: '',
@@ -19,8 +20,18 @@ const emptyForm = {
 };
 
 const proofAccept = '.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-const statuses = ['Present', 'Absent', 'WFH', 'Halfday', 'On Site Work'];
+const statuses = [
+  ['Present', 'bg-emerald-500'],
+  ['Absent', 'bg-rose-500'],
+  ['WFH', 'bg-blue-500'],
+  ['Halfday', 'bg-white text-slate-900'],
+  ['On Site Work', 'bg-yellow-400 text-slate-900'],
+  ['Festival', 'bg-pink-500'],
+  ['Paid Leave', 'bg-purple-500'],
+  ['Paid Holiday', 'bg-orange-500']
+];
 
+const defaultTimes = { loginTime: '09:30', logoutTime: '18:30' };
 function Avatar({ employee }) {
   return (
     <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-800 text-sm font-bold text-slate-500">
@@ -42,9 +53,11 @@ export default function EmployeesAdmin() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [attendance, setAttendance] = useState([]);
-  const [attendanceForm, setAttendanceForm] = useState({ date: '', status: 'Present' });
+  const [attendanceForm, setAttendanceForm] = useState({ date: '', status: 'Present', ...defaultTimes, workHours: '09:00' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [attendanceVersion, setAttendanceVersion] = useState(0);
+  const [attendanceSuccess, setAttendanceSuccess] = useState('');
 
   const load = async () => {
     try {
@@ -120,7 +133,8 @@ export default function EmployeesAdmin() {
       ]);
       setSelected(profile.data);
       setAttendance(records.data || []);
-      setAttendanceForm({ date: '', status: 'Present' });
+      setAttendanceForm({ date: '', status: 'Present', ...defaultTimes, workHours: '09:00' });
+      setAttendanceSuccess('');
     } catch (err) {
       setError(err.message || 'Unable to load employee profile.');
     }
@@ -136,7 +150,7 @@ export default function EmployeesAdmin() {
       role: employee.role || '',
       department: employee.department || '',
       gender: employee.gender || '',
-      joiningDate: employee.joining_date?.slice(0, 10) || '',
+      joiningDate: dateOnly(employee.joining_date),
       basicSalary: employee.basic_salary || '',
       status: employee.status || 'Active'
     });
@@ -179,14 +193,18 @@ export default function EmployeesAdmin() {
   };
 
   const saveAttendance = async () => {
-    if (!attendanceForm.date || !selected) return;
+    if (!attendanceForm.date || !selected || attendanceForm.status === 'Paid Holiday') return;
     try {
       const response = await api.post('/employees/attendance', {
         employeeId: selected.id,
-        ...attendanceForm
+        ...attendanceForm,
+        loginTime: attendanceForm.loginTime || null,
+        logoutTime: attendanceForm.logoutTime || null
       });
       if (response.data) {
-        setAttendance((current) => [response.data, ...current.filter((row) => String(row.attendance_date).slice(0, 10) !== attendanceForm.date)]);
+        setAttendance((current) => [{ ...response.data, attendance_date: attendanceForm.date }, ...current.filter((row) => dateOnly(row.attendance_date) !== attendanceForm.date)]);
+        setAttendanceVersion((version) => version + 1);
+        setAttendanceSuccess(`Attendance saved for ${formatDateOnly(attendanceForm.date)}.`);
       } else {
         setError('Attendance date must be between joining date and today.');
       }
@@ -234,7 +252,7 @@ export default function EmployeesAdmin() {
             type={key === 'password' ? 'password' : key === 'joiningDate' ? 'date' : key === 'basicSalary' ? 'number' : 'text'}
             placeholder={label}
             value={form[key]}
-            max={key === 'joiningDate' ? new Date().toISOString().slice(0, 10) : undefined}
+            max={key === 'joiningDate' ? todayDateOnly() : undefined}
             onChange={(event) => setForm({ ...form, [key]: event.target.value })}
             className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
           />
@@ -294,10 +312,8 @@ export default function EmployeesAdmin() {
                 <span className="min-w-0">
                   <b className="block truncate">{employee.full_name}</b>
                   <span className="block text-sm text-slate-400">{employee.employee_id}</span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {employee.role || 'No role'}
-                    {employee.department ? ` • ${employee.department}` : ''}
-                  </span>
+                  <span className="block truncate text-xs text-slate-400">{employee.role || 'No role'}</span>
+                  <span className="block truncate text-xs text-slate-500">{employee.department || 'No department'}</span>
                 </span>
               </span>
               <span className={`shrink-0 text-xs ${statusClass(employee.status)}`}>{employee.status || 'Active'}</span>
@@ -361,33 +377,39 @@ export default function EmployeesAdmin() {
           <div className="mt-5 border-t border-slate-700 pt-5">
             <h4 className="text-sm font-semibold">Attendance & Salary</h4>
             
-            <AttendanceCalendar
-              records={attendance}
-              joiningDate={selected.joining_date}
-              editable
-              onSelectDate={(date, status) => setAttendanceForm({ date, status: status || 'Present' })}
-            />
-
-            <div className="mt-4 flex gap-2">
-              <input
-                type="date"
-                min={selected.joining_date?.slice(0, 10)}
-                max={new Date().toISOString().slice(0, 10)}
-                value={attendanceForm.date}
-                onChange={(event) => setAttendanceForm({ ...attendanceForm, date: event.target.value })}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)]">
+              <AttendanceCalendar
+                records={attendance}
+                joiningDate={selected.joining_date}
+                editable
+                selectedDate={attendanceForm.date}
+                previewStatus={attendanceForm.status}
+                  onSelectDate={(date, status) => { const record = attendance.find((item) => dateOnly(item.attendance_date) === date); const nextStatus = status || 'Present'; const times = timesForStatus(nextStatus, record?.login_time?.slice(0, 5), record?.logout_time?.slice(0, 5)); setAttendanceSuccess(''); setAttendanceForm({ date, status: nextStatus, ...times }); }}
               />
-              <select value={attendanceForm.status} onChange={(event) => setAttendanceForm({ ...attendanceForm, status: event.target.value })} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm">
-                {statuses.map((status) => (
-                  <option key={status}>{status}</option>
-                ))}
-              </select>
-              <button type="button" onClick={saveAttendance} className="cursor-pointer rounded-lg bg-emerald-600 px-3 py-2 text-sm">
+              <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                <p className="text-sm font-semibold">{attendanceForm.date ? `Selected: ${formatDateOnly(attendanceForm.date)}` : 'Select an editable date'}</p>
+                {attendanceForm.date && <div className="mt-3 space-y-3">
+                  <label className="block text-xs text-slate-400">Login Time{nonWorkingStatuses.has(attendanceForm.status) ? <span className="mt-1 block rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-500">NA</span> : <input type="time" value={attendanceForm.loginTime} onChange={(event) => { const loginTime = event.target.value; setAttendanceForm((current) => ({ ...current, loginTime, workHours: calculateWorkHours(loginTime, current.logoutTime) })); }} className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100" />}</label>
+                  <label className="block text-xs text-slate-400">Logout Time{nonWorkingStatuses.has(attendanceForm.status) ? <span className="mt-1 block rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-500">NA</span> : <input type="time" value={attendanceForm.logoutTime} onChange={(event) => { const logoutTime = event.target.value; setAttendanceForm((current) => ({ ...current, logoutTime, workHours: calculateWorkHours(current.loginTime, logoutTime) })); }} className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100" />}</label>
+                  <label className="block text-xs text-slate-400">Work Hours<input readOnly value={nonWorkingStatuses.has(attendanceForm.status) ? 'NA' : attendanceForm.workHours} className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100" /></label>
+                </div>}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {statuses.map(([status, color]) => (
+                <button type="button" key={status} disabled={status === 'Paid Holiday'} onClick={() => setAttendanceForm((current) => ({ ...current, status, ...timesForStatus(status, current.loginTime, current.logoutTime) }))} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${color} ${attendanceForm.status === status ? 'ring-2 ring-cyan-300 ring-offset-2 ring-offset-slate-950' : 'opacity-70'} ${status === 'Paid Holiday' ? 'cursor-not-allowed opacity-50' : ''}`}>
+                  {status === 'Halfday' ? 'Half Day' : status}
+                </button>
+              ))}
+              <button type="button" disabled={!attendanceForm.date || saving} onClick={saveAttendance} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">
                 Save
               </button>
             </div>
+            {attendanceForm.date && <p className="mt-2 text-xs text-slate-400">Status: {attendanceForm.status === 'Halfday' ? 'Half Day' : attendanceForm.status}</p>}
+            {attendanceSuccess && <p className="mt-2 text-xs text-emerald-400">{attendanceSuccess}</p>}
 
-            <SalaryDashboard employeeId={selected.id} employee={selected} />
+            <SalaryDashboard employeeId={selected.id} employee={selected} refreshKey={attendanceVersion} />
           </div>
         </section>
       )}
