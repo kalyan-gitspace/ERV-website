@@ -13,7 +13,7 @@ const setMeta = (name, content, attribute = 'name') => {
 
 export function SEO({ title, description, path = '/', image = '/logo.png', schema }) {
   useEffect(() => {
-    const siteTitle = title ? `${title} | ERV` : 'ERV | Engineering Smarter Roads';
+    const siteTitle = 'Edge Route Vision Pvt. Ltd.';
     const canonicalUrl = `${window.location.origin}${path}`;
 
     document.title = siteTitle;
