@@ -1,6 +1,23 @@
 import { notificationService } from '../services/notification.service.js';
 
 export const notificationController = {
+  async pendingLeaveCount(req, res, next) {
+    try {
+      return res.ok({ count: await notificationService.pendingUnreadLeaveCount() });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async markLeaveRequestsRead(req, res, next) {
+    try {
+      const notifications = await notificationService.markUnreadLeaveRequestsAsRead();
+      return res.ok({ count: notifications.length });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   /**
    * Get recent notifications
    */
@@ -11,7 +28,9 @@ export const notificationController = {
 
       const notifications = await notificationService.getNotifications({
         is_read: isRead,
-        limit
+        limit,
+        recipientType: req.employee ? 'employee' : 'admin',
+        recipientId: req.employee?.sub
       });
 
       return res.status(200).json(notifications);

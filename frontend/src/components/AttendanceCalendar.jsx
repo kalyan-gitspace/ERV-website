@@ -13,7 +13,7 @@ const statusColors = {
   'Paid Leave': 'bg-purple-500'
 };
 
-export default function AttendanceCalendar({ records = [], joiningDate = '', editable = false, selectedDate = '', previewStatus = '', onSelectDate }) {
+export default function AttendanceCalendar({ records = [], joiningDate = '', editable = false, allowFuture = false, disablePast = false, allowSundays = false, blockedStatuses = [], selectedDate = '', selectedDates = [], selectedDatesClass = '', previewStatus = '', onSelectDate }) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
   const today = useMemo(() => dateOnly(new Date()), []);
@@ -59,10 +59,12 @@ export default function AttendanceCalendar({ records = [], joiningDate = '', edi
           const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const weekday = new Date(month.getFullYear(), month.getMonth(), day).getDay();
           const beforeJoining = joiningDate && key < dateOnly(joiningDate);
-          const futureDate = key > today;
+          const futureDate = !allowFuture && key > today;
+          const pastDate = disablePast && key < today;
           const status = beforeJoining ? 'Before Joining' : futureDate ? 'Future' : weekday === 0 ? 'Paid Holiday' : selectedDate === key && previewStatus ? previewStatus : recordMap[key];
-          const color = beforeJoining || futureDate ? 'bg-slate-800' : statusColors[status] || 'bg-slate-700';
-          const isDisabled = !editable || Boolean(beforeJoining) || futureDate || weekday === 0;
+          const leaveSelected = selectedDates.includes(key);
+          const color = beforeJoining || futureDate || pastDate ? 'bg-slate-800' : leaveSelected && selectedDatesClass ? 'bg-transparent' : leaveSelected ? 'bg-rose-600' : statusColors[status] || 'bg-slate-700';
+          const isDisabled = Boolean(beforeJoining) || futureDate || pastDate || (!allowSundays && weekday === 0) || blockedStatuses.includes(status) || (!editable && !onSelectDate);
 
           return (
             <button
@@ -70,9 +72,9 @@ export default function AttendanceCalendar({ records = [], joiningDate = '', edi
               key={key}
               disabled={isDisabled}
               onClick={() => onSelectDate?.(key, recordMap[key] || '')}
-              title={beforeJoining ? 'Before joining date' : futureDate ? 'Future date' : weekday === 0 ? 'Paid Holiday' : status || 'Not updated'}
-              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[10px] ${color} ${
-                status === 'Halfday' ? 'text-slate-900' : 'text-white'
+              title={beforeJoining ? 'Before joining date' : pastDate ? 'Past date' : futureDate ? 'Future date' : weekday === 0 ? 'Paid Holiday' : status || 'Not updated'}
+              className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[10px] ${color} ${leaveSelected ? selectedDatesClass : ''} ${
+                status === 'Halfday' && !leaveSelected ? 'text-slate-900' : 'text-white'
               } ${isDisabled && !editable ? '' : isDisabled ? 'cursor-not-allowed opacity-40' : ''}`}
             >
               {day}

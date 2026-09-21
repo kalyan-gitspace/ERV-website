@@ -73,7 +73,7 @@ app.use(setCsrfToken);
 // 7. Rate Limiting for API routes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150,
+  max: 600,
   standardHeaders: true,
   legacyHeaders: false,
   // Do not apply rate limit to auth login endpoint so admins are not blocked
@@ -170,8 +170,20 @@ async function ensureEmployeeTables() {
     await db.query(`CREATE TABLE IF NOT EXISTS employee_attendance (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE, attendance_date DATE NOT NULL, status VARCHAR(20) NOT NULL CHECK (status IN ('Present', 'Absent')), login_time TIME, logout_time TIME, work_hours TIME, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE (employee_id, attendance_date))`);
     await db.query(`ALTER TABLE employee_attendance ADD COLUMN IF NOT EXISTS login_time TIME, ADD COLUMN IF NOT EXISTS logout_time TIME, ADD COLUMN IF NOT EXISTS work_hours TIME`);
     await db.query(`ALTER TABLE employee_attendance DROP CONSTRAINT IF EXISTS employee_attendance_status_check`);
-    await db.query(`ALTER TABLE employee_attendance ADD CONSTRAINT employee_attendance_status_check CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work', 'Festival', 'Paid Leave'))`);
+    await db.query(`ALTER TABLE employee_attendance ADD CONSTRAINT employee_attendance_status_check CHECK (status IN ('Present', 'Absent', 'WFH', 'Halfday', 'On Site Work', 'Paid Holiday', 'Festival', 'Paid Leave'))`);
+    await db.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS recipient_type VARCHAR(20) DEFAULT 'admin', ADD COLUMN IF NOT EXISTS recipient_id UUID, ADD COLUMN IF NOT EXISTS related_id UUID`);
+    await db.query(`DELETE FROM notifications first_row USING notifications duplicate_row WHERE first_row.type = 'leave_request' AND first_row.related_id IS NOT NULL AND first_row.type = duplicate_row.type AND first_row.related_id = duplicate_row.related_id AND first_row.ctid < duplicate_row.ctid`);
+    await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS notifications_leave_request_unique ON notifications (type, related_id) WHERE type = 'leave_request' AND related_id IS NOT NULL`);
+    await db.query(`CREATE TABLE IF NOT EXISTS office_festivals (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), festival_date DATE UNIQUE NOT NULL, name VARCHAR(255) DEFAULT 'Festival', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await db.query(`CREATE TABLE IF NOT EXISTS leave_requests (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE, requested_days INTEGER NOT NULL CHECK (requested_days > 0), leave_type VARCHAR(20) NOT NULL DEFAULT 'unpaid', request_key VARCHAR(255), status VARCHAR(20) NOT NULL DEFAULT 'Pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await db.query(`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS leave_type VARCHAR(20) NOT NULL DEFAULT 'unpaid', ADD COLUMN IF NOT EXISTS request_key VARCHAR(255), ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'Pending'`);
+    await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS leave_requests_request_key_unique ON leave_requests (request_key)`);
+    await db.query(`CREATE TABLE IF NOT EXISTS leave_request_dates (id UUID PRIMARY KEY DEFAULT uuid_generate_v7(), leave_request_id UUID NOT NULL REFERENCES leave_requests(id) ON DELETE CASCADE, leave_date DATE NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')), UNIQUE (leave_request_id, leave_date))`);
   } catch (error) { logger.error('Error creating employee tables:', error); }
+}
+
+async function finalizeOpenDutyRecords() {
+  await db.query(`UPDATE employee_attendance SET logout_time='23:59'::time, work_hours=to_char(time '23:59' - login_time, 'HH24:MI:SS')::time, updated_at=CURRENT_TIMESTAMP WHERE attendance_date < CURRENT_DATE AND login_time IS NOT NULL AND logout_time IS NULL AND status IN ('Present', 'WFH', 'On Site Work', 'Halfday')`);
 }
 
 async function bootstrapAdmin() {
@@ -342,6 +354,8 @@ app.listen(PORT, async () => {
   mediaService.initStorage();
   await ensureApplicationTable();
   await ensureEmployeeTables();
+  await finalizeOpenDutyRecords();
+  setInterval(() => finalizeOpenDutyRecords().catch((error) => logger.error('Unable to finalize open duty records:', error)), 60 * 1000);
   await ensureClientsTable();
   await ensureProductCmsColumns();
   await ensureLegacyProducts();

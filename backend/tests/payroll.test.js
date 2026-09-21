@@ -11,8 +11,8 @@ it('uses actual month lengths, including leap-year February', () => {
 });
 
 it('normalizes attendance times by status', () => {
-  expect(normalizeAttendanceTimes('Present')).toEqual({ loginTime: '09:30', logoutTime: '18:30', workHours: '09:00' });
-  expect(normalizeAttendanceTimes('Halfday')).toEqual({ loginTime: '09:30', logoutTime: '14:00', workHours: '04:30' });
+  expect(normalizeAttendanceTimes('Present')).toEqual({ loginTime: null, logoutTime: null, workHours: null });
+  expect(normalizeAttendanceTimes('Halfday')).toEqual({ loginTime: null, logoutTime: null, workHours: null });
   expect(normalizeAttendanceTimes('Festival', '09:30', '18:30')).toEqual({ loginTime: null, logoutTime: null, workHours: null });
   expect(normalizeAttendanceTimes('Paid Leave', '09:30', '18:30')).toEqual({ loginTime: null, logoutTime: null, workHours: null });
   expect(normalizeAttendanceTimes('Absent', '09:30', '18:30')).toEqual({ loginTime: null, logoutTime: null, workHours: null });

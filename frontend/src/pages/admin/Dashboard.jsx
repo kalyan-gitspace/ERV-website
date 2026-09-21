@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { LogOut, Lock, User, AlertCircle, CheckCircle, RefreshCw, Images, Package, BriefcaseBusiness, Users, Share2, Settings } from 'lucide-react';
+import { LogOut, Lock, User, AlertCircle, CheckCircle, RefreshCw, Images, Package, BriefcaseBusiness, Users, Share2, Settings, Bell } from 'lucide-react';
 import { UserRoundCog } from 'lucide-react';
 import EmployeesAdmin from './EmployeesAdmin';
 import PreviousProjectsAdmin from './PreviousProjectsAdmin';
@@ -11,6 +11,8 @@ import ClientsAdmin from './ClientsAdmin';
 import SocialMediaAdmin from './SocialMediaAdmin';
 import ProductsAdmin from './ProductsAdmin';
 import { LoadingScreen } from '../../components/LoadingScreen';
+import WorkforceAdmin from './WorkforceAdmin';
+import api from '../../services/api';
 
 export function Dashboard() {
   const { user, logout, changePassword } = useAuth();
@@ -22,6 +24,13 @@ export function Dashboard() {
   const [activeSection, setActiveSection] = useState(null);
   const [showInitialLoader, setShowInitialLoader] = useState(Boolean(location.state?.showAdminLoader));
   const [pendingSection, setPendingSection] = useState(null);
+  const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
+
+  // TEMPORARILY DISABLED
+  // Attendance, leave requests, and salary/earnings admin modules are currently on hold.
+  const LEAVE_FEATURE_ENABLED = false;
+  const ATTENDANCE_FEATURE_ENABLED = false;
+  const SALARY_EARNINGS_FEATURE_ENABLED = false;
 
   const sections = [
     { id: 'gallery', label: 'Gallery', icon: Images, component: GalleryAdmin },
@@ -31,6 +40,7 @@ export function Dashboard() {
     { id: 'clients', label: 'Clients', icon: Users, component: ClientsAdmin },
     { id: 'social', label: 'Social Media', icon: Share2, component: SocialMediaAdmin },
     { id: 'employees', label: 'Employees', icon: UserRoundCog, component: EmployeesAdmin },
+    ...(LEAVE_FEATURE_ENABLED ? [{ id: 'workforce', label: 'Festivals & Leave', icon: Bell, component: WorkforceAdmin }] : []),
     { id: 'settings', label: 'Settings', icon: Settings, component: null },
   ];
 
@@ -81,6 +91,21 @@ export function Dashboard() {
     setPendingSection(null);
   };
 
+  const refreshLeaveBadge = useCallback(async () => {
+    try {
+      const response = await api.get('/notifications/leave-requests/pending-count');
+      setPendingLeaveCount(response.data?.count || 0);
+    } catch (error) {
+      console.error('Unable to refresh leave notification count.', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshLeaveBadge();
+    const refresh = window.setInterval(refreshLeaveBadge, 15000);
+    return () => window.clearInterval(refresh);
+  }, [refreshLeaveBadge]);
+
   if (showInitialLoader) {
     return <LoadingScreen mode="admin-initial" onComplete={() => setShowInitialLoader(false)} />;
   }
@@ -111,7 +136,7 @@ export function Dashboard() {
             <div className="mb-5 flex items-center gap-3"><User className="h-5 w-5 text-indigo-400" /><div><h2 className="text-lg font-bold text-slate-100">Admin Dashboard</h2><p className="text-xs text-slate-400">Select a section to manage website content.</p></div></div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {sections.map(({ id, label, icon: Icon }) => (
-                <button key={id} type="button" onClick={() => beginSectionTransition(id)} disabled={Boolean(pendingSection)} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-left text-sm font-semibold text-slate-200 transition hover:border-indigo-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"><Icon className="h-5 w-5 text-cyan-400" />{label}</button>
+                <button key={id} type="button" onClick={() => beginSectionTransition(id)} disabled={Boolean(pendingSection)} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-left text-sm font-semibold text-slate-200 transition hover:border-indigo-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"><Icon className="h-5 w-5 text-cyan-400" />{label}{id === 'workforce' && pendingLeaveCount > 0 && <span className="ml-auto rounded-full bg-rose-600 px-2 py-0.5 text-xs font-bold text-white">{pendingLeaveCount}</span>}</button>
               ))}
             </div>
           </section>
@@ -132,7 +157,7 @@ export function Dashboard() {
                   <button type="submit" disabled={passwordStatus.loading} className="flex cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">{passwordStatus.loading && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}{passwordStatus.loading ? 'Updating credentials...' : 'Change Password'}</button>
                 </form>
               </section>
-            ) : ActiveComponent ? <ActiveComponent /> : null}
+            ) : ActiveComponent ? <ActiveComponent onLeaveNotificationsViewed={refreshLeaveBadge} /> : null}
           </section>
         )}
       </div>

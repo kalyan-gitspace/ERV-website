@@ -209,8 +209,7 @@ api.interceptors.response.use(
       originalRequest.url.includes('/auth/login') ||
       originalRequest.url.includes('/auth/refresh') ||
       originalRequest.url.includes('/auth/logout') ||
-      originalRequest.url.includes('/employees/login') ||
-      originalRequest.url.includes('/employees/me');
+      originalRequest.url.includes('/employees/login');
 
     if (responseStatus === 403 && !originalRequest._retryCsrf && ['POST', 'PUT', 'PATCH', 'DELETE'].includes((originalRequest.method || '').toUpperCase())) {
       originalRequest._retryCsrf = true;

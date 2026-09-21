@@ -15,8 +15,5 @@ export const calculateWorkHours = (loginTime, logoutTime) => {
 
 export const timesForStatus = (status, loginTime, logoutTime) => {
   if (nonWorkingStatuses.has(status)) return { loginTime: '', logoutTime: '', workHours: '' };
-  const defaults = attendanceDefaults(status);
-  const login = loginTime || defaults.loginTime;
-  const logout = logoutTime || defaults.logoutTime;
-  return { loginTime: login, logoutTime: logout, workHours: calculateWorkHours(login, logout) };
+  return { loginTime: loginTime || '', logoutTime: logoutTime || '', workHours: calculateWorkHours(loginTime, logoutTime) };
 };

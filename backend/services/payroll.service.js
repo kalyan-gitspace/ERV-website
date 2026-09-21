@@ -20,7 +20,7 @@ export function calculatePayroll(employee, records, monthValue, now = new Date()
   const joiningDate = dateOnly(employee.joining_date) || null;
   const recordMap = Object.fromEntries(records.map((record) => [dateOnly(record.attendance_date), record.status]));
   const rows = [];
-  const counts = { Present: 0, Absent: 0, WFH: 0, Halfday: 0, 'On Site Work': 0, Festival: 0, 'Paid Leave': 0, 'Paid Sundays': 0 };
+  const counts = { Present: 0, Absent: 0, WFH: 0, Halfday: 0, 'On Site Work': 0, Festival: 0, 'Paid Leave': 0, 'Paid Holidays': 0, 'Paid Sundays': 0 };
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = dateKey(year, month, day);
     const weekday = new Date(year, month - 1, day).getDay();
@@ -29,7 +29,7 @@ export function calculatePayroll(employee, records, monthValue, now = new Date()
     let status = beforeJoining ? 'Before Joining' : future ? 'Future' : weekday === 0 ? 'Paid Holiday' : (recordMap[date] || 'Not Updated');
     const value = beforeJoining || future ? 0 : status === 'Paid Holiday' ? 1 : (paidValues[status] ?? 0);
     if (counts[status] !== undefined) counts[status] += 1;
-    if (status === 'Paid Holiday') counts['Paid Sundays'] += 1;
+    if (status === 'Paid Holiday') { counts['Paid Sundays'] += 1; counts['Paid Holidays'] += 1; }
     rows.push({ date, displayDate: displayDate(date), day: new Date(year, month - 1, day).toLocaleDateString('en-IN', { weekday: 'long' }), status, dayValue: value });
   }
   const basicSalary = Number(employee.basic_salary || 0);

@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "ERV",
+    "slug": "erv-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/erv-logo.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/erv-logo.png"
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}

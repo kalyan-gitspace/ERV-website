@@ -8,13 +8,14 @@ export const notificationRepository = {
    * Create a new system notification
    */
   async create(notificationData) {
-    const { title, message, type } = notificationData;
+    const { title, message, type, recipientType = 'admin', recipientId = null, relatedId = null } = notificationData;
     const query = `
-      INSERT INTO notifications (title, message, type, is_read)
-      VALUES ($1, $2, $3, FALSE)
+      INSERT INTO notifications (title, message, type, recipient_type, recipient_id, related_id, is_read)
+      VALUES ($1, $2, $3, $4, $5, $6, FALSE)
+      ON CONFLICT DO NOTHING
       RETURNING *
     `;
-    const result = await db.query(query, [title, message, type]);
+    const result = await db.query(query, [title, message, type, recipientType, recipientId, relatedId]);
     return result.rows[0];
   },
 
@@ -23,7 +24,7 @@ export const notificationRepository = {
    * @param {Object} options - Filter options (e.g., is_read, limit)
    */
   async findAll(options = {}) {
-    const { is_read, limit = 20 } = options;
+    const { is_read, limit = 20, recipientType, recipientId } = options;
     const params = [];
     let paramCount = 1;
 
@@ -31,8 +32,10 @@ export const notificationRepository = {
       SELECT * FROM notifications
     `;
 
+    if (recipientType) { query += ` WHERE recipient_type = $${paramCount}`; params.push(recipientType); paramCount++; }
+    if (recipientId) { query += `${params.length ? ' AND' : ' WHERE'} recipient_id = $${paramCount}`; params.push(recipientId); paramCount++; }
     if (is_read !== undefined) {
-      query += ` WHERE is_read = $${paramCount}`;
+      query += `${params.length ? ' AND' : ' WHERE'} is_read = $${paramCount}`;
       params.push(is_read);
       paramCount++;
     }
@@ -70,5 +73,37 @@ export const notificationRepository = {
     `;
     const result = await db.query(query);
     return result.rows;
+  },
+
+  async pendingUnreadLeaveCount() {
+    const result = await db.query(`
+      SELECT COUNT(*)::int AS count
+      FROM notifications n
+      JOIN leave_requests r ON r.id = n.related_id
+      WHERE n.type = 'leave_request'
+        AND n.recipient_type = 'admin'
+        AND n.is_read = FALSE
+        AND r.status = 'Pending'
+    `);
+    return result.rows[0]?.count || 0;
+  },
+
+  async markUnreadLeaveRequestsAsRead() {
+    const result = await db.query(`
+      UPDATE notifications n
+      SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP
+      FROM leave_requests r
+      WHERE r.id = n.related_id
+        AND n.type = 'leave_request'
+        AND n.recipient_type = 'admin'
+        AND n.is_read = FALSE
+        AND r.status = 'Pending'
+      RETURNING n.id
+    `);
+    return result.rows;
+  },
+
+  async removeForLeaveRequest(leaveRequestId) {
+    await db.query(`DELETE FROM notifications WHERE type = 'leave_request' AND related_id = $1`, [leaveRequestId]);
   }
 };

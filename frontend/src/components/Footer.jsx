@@ -4,22 +4,23 @@ import { Linkedin, Mail, MapPin, Instagram, Facebook, Youtube } from 'lucide-rea
 import Logo from './Logo';
 import api, { fetchSettings } from '../services/api';
 
-const footerLinks = {
-  Quick: [
-    { label: 'Home', href: '/' },
-    { label: 'About', href: '/about' },
-    { label: 'Gallery', href: '/gallery' },
-    { label: 'Careers', href: '/careers' },
-  ],
-  Products: [
-    { label: 'LDD', href: '/products/ldd' },
-    { label: 'NSV', href: '/products/nsv' },
-    { label: 'Search', href: '/search' },
-  ],
-  Company: [
-    { label: 'Privacy', href: '/privacy' },
-    { label: 'Terms', href: '/terms' },
-  ],
+const quickFooterLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
+  { label: 'Gallery', href: '/gallery' },
+  { label: 'Careers', href: '/careers' },
+];
+
+const companyFooterLinks = [
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
+];
+
+const extractProductLabel = (name) => {
+  if (typeof name !== 'string') return '';
+  const match = name.match(/\(([^)]+)\)/);
+  if (match?.[1]?.trim()) return match[1].trim();
+  return name.trim();
 };
 
 const SOCIAL_KEYS = {
@@ -31,6 +32,7 @@ const SOCIAL_KEYS = {
 
 export function Footer() {
   const [socialLinks, setSocialLinks] = useState({ linkedin: '', instagram: '', facebook: '', youtube: '' });
+  const [productLinks, setProductLinks] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -50,6 +52,40 @@ export function Footer() {
     })();
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProducts = async () => {
+      try {
+        const response = await api.get('/products');
+        const records = Array.isArray(response) ? response : response?.data || [];
+
+        const links = records
+          .filter((product) => product?.status === 'enabled' && product?.slug && product?.name)
+          .slice(0, 4)
+          .map((product) => ({
+            key: product.id || product.slug,
+            label: extractProductLabel(product.name),
+            href: `/products/${product.slug}`,
+          }))
+          .filter((link) => link.label && link.href);
+
+        if (mounted) setProductLinks(links);
+      } catch (err) {
+        if (mounted) setProductLinks([]);
+      }
+    };
+
+    loadProducts();
+    return () => { mounted = false; };
+  }, []);
+
+  const footerSections = [
+    { title: 'Quick', links: quickFooterLinks },
+    { title: 'Products', links: productLinks },
+    { title: 'Company', links: companyFooterLinks },
+  ];
 
   return (
     <footer id="site-footer" className="border-t border-white/10 bg-[#000000]">
@@ -81,12 +117,12 @@ export function Footer() {
         </div>
 
         <div className="grid gap-8 sm:grid-cols-3">
-          {Object.entries(footerLinks).map(([title, links]) => (
+          {footerSections.map(({ title, links }) => (
             <div key={title}>
               <h3 className="mb-4 text-xs font-extrabold uppercase text-slate-200">{title}</h3>
               <ul className="space-y-3 text-sm text-slate-500">
                 {links.map((link) => (
-                  <li key={link.href}>
+                  <li key={link.key || link.href}>
                     <Link to={link.href} className="transition-colors hover:text-cyan-200">
                       {link.label}
                     </Link>

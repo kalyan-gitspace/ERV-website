@@ -178,7 +178,7 @@ export const authService = {
   },
 
   generateEmployeeAccessToken(employee) {
-    return jwt.sign({ sub: employee.id, employeeId: employee.employee_id, name: employee.full_name, role: employee.role, type: 'employee' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return jwt.sign({ sub: employee.id, employeeId: employee.employee_id, name: employee.full_name, role: employee.role, type: 'employee' }, JWT_SECRET, { expiresIn: process.env.EMPLOYEE_JWT_EXPIRES_IN || '7d' });
   },
 
   /**

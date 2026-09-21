@@ -17,10 +17,7 @@ export const calculateWorkHours = (loginTime, logoutTime) => {
 
 export const normalizeAttendanceTimes = (status, loginTime, logoutTime) => {
   if (NON_WORKING_STATUSES.has(status)) return { loginTime: null, logoutTime: null, workHours: null };
-  const defaults = status === 'Halfday' ? attendanceTimeDefaults.halfday : attendanceTimeDefaults.working;
-  const login = loginTime || defaults.loginTime;
-  const logout = logoutTime || defaults.logoutTime;
-  return { loginTime: login, logoutTime: logout, workHours: calculateWorkHours(login, logout) };
+  return { loginTime: loginTime || null, logoutTime: logoutTime || null, workHours: calculateWorkHours(loginTime, logoutTime) };
 };
 
 export const isWorkingStatus = (status) => WORKING_STATUSES.has(status) || status === 'Halfday';

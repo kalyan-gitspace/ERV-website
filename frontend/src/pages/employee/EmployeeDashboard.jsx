@@ -1,28 +1,25 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Camera, LockKeyhole, LogOut } from 'lucide-react';
 import { useEmployeeAuth } from '../../context/EmployeeAuthContext';
-import AttendanceCalendar from '../../components/AttendanceCalendar';
-import SalaryDashboard from '../../components/SalaryDashboard';
 import api, { resolveImageUrl } from '../../services/api';
 import { formatDateOnly } from '../../utils/dateOnly';
 
-const formatTime = (value) => {
-  if (!value) return 'NA';
-  const [hour, minute] = String(value).slice(0, 5).split(':').map(Number);
-  return `${String(hour % 12 || 12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
-};
+// TEMPORARILY DISABLED
+// Attendance, leave, and salary/earnings UI are currently on hold.
+// Preserve all implementation for future reactivation.
+const ATTENDANCE_FEATURE_ENABLED = false;
+const LEAVE_FEATURE_ENABLED = false;
+const SALARY_EARNINGS_FEATURE_ENABLED = false;
 
 export default function EmployeeDashboard() {
-  const { employee, logout, setEmployee } = useEmployeeAuth();
-  const [attendance, setAttendance] = useState([]);
+  const { employee, logout, setEmployee, isAuthenticated, loading: authLoading } = useEmployeeAuth();
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    api.get('/employees/me/attendance')
-      .then((response) => setAttendance(response.data || []))
-      .catch(() => setMessage('Unable to load attendance.'));
-  }, []);
+    if (authLoading || !isAuthenticated) return undefined;
+    return undefined;
+  }, [authLoading, isAuthenticated]);
 
   const picture = async (event) => {
     const file = event.target.files?.[0];
@@ -65,7 +62,6 @@ export default function EmployeeDashboard() {
           <div>
             <p className="text-sm text-cyan-400">ERV Employee Portal</p>
             <h1 className="text-2xl font-bold">{employee?.full_name}</h1>
-            <p className="text-sm text-slate-400">{employee?.gender || 'Not specified'}</p>
           </div>
           <button onClick={logout} className="flex cursor-pointer items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm">
             <LogOut className="h-4 w-4" />
@@ -177,21 +173,6 @@ export default function EmployeeDashboard() {
               </form>
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <h2 className="text-lg font-semibold">Attendance Calendar</h2>
-              <AttendanceCalendar records={attendance} joiningDate={employee?.joining_date} />
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[620px] text-left text-xs">
-                  <thead className="text-slate-400"><tr><th className="p-2">Date</th><th className="p-2">Status</th><th className="p-2">Login Time</th><th className="p-2">Logout Time</th><th className="p-2">Work Hours</th></tr></thead>
-                  <tbody>{attendance.map((record) => <tr key={record.id || record.attendance_date} className="border-t border-slate-800"><td className="p-2">{formatDateOnly(record.attendance_date)}</td><td className="p-2">{record.status === 'Halfday' ? 'Half Day' : record.status}</td><td className="p-2">{formatTime(record.login_time)}</td><td className="p-2">{formatTime(record.logout_time)}</td><td className="p-2">{record.work_hours?.slice(0, 5) || 'NA'}</td></tr>)}</tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <h2 className="text-lg font-semibold">Salary & Earnings</h2>
-              <SalaryDashboard employeeRoute employee={employee} />
-            </section>
           </div>
         </section>
       </div>

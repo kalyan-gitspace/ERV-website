@@ -73,3 +73,13 @@ export function protectAdmin(req, res, next) {
   });
 }
 
+export function protectAny(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.error(401, 'Authentication required.');
+  const decoded = authService.verifyAccessToken(authHeader.slice(7));
+  if (!decoded) return res.error(401, 'Session expired or invalid token.');
+  if (decoded.type === 'employee') req.employee = decoded;
+  else req.admin = decoded;
+  next();
+}
+

@@ -24,5 +24,13 @@ export const notificationService = {
   async markAllAsRead() {
     logger.info('Marking all notifications as read.');
     return await notificationRepository.markAllAsRead();
+  },
+
+  async pendingUnreadLeaveCount() {
+    return notificationRepository.pendingUnreadLeaveCount();
+  },
+
+  async markUnreadLeaveRequestsAsRead() {
+    return notificationRepository.markUnreadLeaveRequestsAsRead();
   }
 };
