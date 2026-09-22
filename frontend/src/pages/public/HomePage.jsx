@@ -62,7 +62,7 @@ export function HomePage() {
   return (
     <main id="home" className="min-h-screen overflow-hidden bg-black font-sans text-white">
       <SEO
-        title="Engineering Smarter Roads"
+        title="Edge Route Vision Pvt. Ltd."
         description="ERV delivers advanced road and infrastructure intelligence through cutting-edge engineering, precision surveying technology, and innovative data-driven solutions."
         path="/"
         schema={pageSchema}
