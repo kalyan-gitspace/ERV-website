@@ -1,95 +1,81 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import cloudinary from '../config/cloudinary.js';
 import { mediaRepository } from '../repositories/media.repository.js';
 import logger from '../config/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsRoot = path.join(__dirname, '..', 'uploads');
-const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const allowedMimeTypes = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+
 const maxFileSize = 10 * 1024 * 1024;
 
-const ensureDirectory = (dirPath) => {
-  fs.mkdirSync(dirPath, { recursive: true });
-};
+const uploadBufferToCloudinary = (buffer, options) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      options,
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
 
-const ensureUploadStructure = () => {
-  const subfolders = ['projects', 'products', 'gallery', 'team', 'careers', 'certificates', 'logos', 'documents', 'temp'];
-  ensureDirectory(uploadsRoot);
-  subfolders.forEach((folder) => ensureDirectory(path.join(uploadsRoot, folder)));
-};
+        resolve(result);
+      }
+    );
 
-const getFileExtension = (originalName) => {
-  const parsed = path.parse(originalName);
-  return parsed.ext ? parsed.ext.toLowerCase() : '.bin';
+    stream.end(buffer);
+  });
 };
-
-const buildFileName = (originalName, destination) => {
-  const ext = getFileExtension(originalName);
-  const base = path.parse(originalName).name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
-  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return `${base || 'file'}-${uniqueSuffix}${ext}`;
-};
-
-const getPublicUrl = (relativePath) => `/uploads/${relativePath.replace(/\\/g, '/')}`;
 
 export const mediaService = {
+  /**
+   * Cloudinary does not require local storage initialization.
+   */
   initStorage() {
-    ensureUploadStructure();
+    logger.info('Cloudinary media storage initialized.');
   },
 
+  /**
+   * Upload a media file to Cloudinary and create the database record.
+   */
   async uploadFile(file, destination = 'projects', adminId = 'system') {
-    ensureUploadStructure();
-
     if (!file) {
       throw new Error('No file provided.');
     }
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new Error('Unsupported file type. Only JPG, JPEG, PNG, and WEBP images are allowed.');
+      throw new Error(
+        'Unsupported file type. Only JPG, JPEG, PNG, and WEBP images are allowed.'
+      );
     }
 
     if (file.size > maxFileSize) {
       throw new Error('File too large. Maximum size is 10MB.');
     }
 
-    const tempDir = path.join(uploadsRoot, 'temp');
-    const destinationDir = path.join(uploadsRoot, destination);
-    ensureDirectory(tempDir);
-    ensureDirectory(destinationDir);
-
-    const fileName = buildFileName(file.originalname || 'upload', destination);
-    const tempPath = path.join(tempDir, fileName);
-    const finalPath = path.join(destinationDir, fileName);
-
     try {
-      fs.writeFileSync(tempPath, file.buffer);
-      fs.renameSync(tempPath, finalPath);
+      const result = await uploadBufferToCloudinary(file.buffer, {
+        folder: `erv/${destination}`,
+        resource_type: 'image',
+      });
 
-      const relativePath = path.relative(uploadsRoot, finalPath).replace(/\\/g, '/');
-      const url = getPublicUrl(relativePath);
       const mediaRecord = await mediaRepository.create({
-        filename: file.originalname || fileName,
-        url,
-        public_id: relativePath,
+        filename: file.originalname || result.public_id,
+        url: result.secure_url,
+        public_id: result.public_id,
         file_type: 'image',
         file_size: file.size,
         uploaded_by: adminId,
       });
 
-      logger.info(`Local upload complete: ${file.originalname} -> ${url}`);
+      logger.info(
+        `Cloudinary upload complete: ${file.originalname} -> ${result.secure_url}`
+      );
+
       return mediaRecord;
     } catch (error) {
-      try {
-        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-      } catch (cleanupError) {
-        logger.warn('Failed to cleanup temp upload', cleanupError);
-      }
-      logger.error(`Local upload failed: ${error.message}`);
+      logger.error(`Cloudinary upload failed: ${error.message}`);
       throw error;
     }
   },
@@ -103,7 +89,7 @@ export const mediaService = {
       file_type: options.file_type,
       search: options.search,
       limit,
-      offset
+      offset,
     };
 
     const items = await mediaRepository.findAll(queryOptions);
@@ -115,8 +101,8 @@ export const mediaService = {
         totalItems,
         currentPage: page,
         totalPages: Math.ceil(totalItems / limit),
-        limit
-      }
+        limit,
+      },
     };
   },
 
@@ -124,20 +110,31 @@ export const mediaService = {
     return await mediaRepository.findById(id);
   },
 
+  /**
+   * Delete media from Cloudinary and then from the database.
+   */
   async deleteMedia(id) {
     const media = await mediaRepository.findById(id);
-    if (!media) return null;
+
+    if (!media) {
+      return null;
+    }
 
     try {
-      const absolutePath = path.join(uploadsRoot, media.public_id.replace(/^uploads\//, ''));
-      if (fs.existsSync(absolutePath)) {
-        fs.unlinkSync(absolutePath);
+      if (media.public_id) {
+        await cloudinary.uploader.destroy(media.public_id, {
+          resource_type: 'image',
+        });
+
+        logger.info(`Deleted Cloudinary asset: ${media.public_id}`);
       }
-      logger.info(`Deleted local asset: ${media.public_id}`);
-    } catch (cdnError) {
-      logger.warn(`Could not delete local asset: ${media.public_id}`, cdnError);
+    } catch (cloudinaryError) {
+      logger.warn(
+        `Could not delete Cloudinary asset: ${media.public_id}`,
+        cloudinaryError
+      );
     }
 
     return await mediaRepository.delete(id);
-  }
+  },
 };
